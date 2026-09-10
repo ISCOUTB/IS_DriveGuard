@@ -1,0 +1,17 @@
+openapi: 3.0.3
+info:
+  title: Driver Fatigue Detection API
+  description: >
+    Contrato de la API para el sistema de deteccion de fatiga y somnolencia
+    en conduccion. Definido en el Sprint 1 (issue "Definir contrato
+    OpenAPI/Swagger") antes de implementar el backend, para que los tres
+    modulos puedan avanzar en paralelo contra la misma interfaz.
+  version: "0.1.0"
+paths: {}
+  # TODO: documentar aqui los endpoints a medida que se implementan:
+  #   POST /auth/login
+  #   GET  /events
+  #   POST /events
+  #   GET  /drivers
+components:
+  schemas: {}
