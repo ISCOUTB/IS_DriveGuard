@@ -1,5 +1,83 @@
 """
-Modelo ORM de User (SQLAlchemy).
-Definir columnas segun el modelo de datos acordado con el equipo.
+Modelo ORM de Usuario (SQLAlchemy).
+Representa a cualquier persona que puede iniciar sesión en el sistema:
+conductor, supervisor de flota o administrador.
 """
-# TODO: definir la clase User(Base) con sus columnas y relaciones.
+import datetime
+import enum
+import uuid
+from typing import Optional
+
+from sqlalchemy import CheckConstraint, Date, DateTime, Enum, String, Uuid, func
+from sqlalchemy.orm import Mapped, mapped_column
+
+from models.base import Base
+
+
+class RolEnum(str, enum.Enum):
+    """El rol de un usuario solo puede ser administrador, conductor o supervisor."""
+    ADMIN = "administrador"
+    DRIVER = "conductor"
+    SUPERVISOR = "supervisor"
+
+
+class Usuario(Base):
+    __tablename__ = "usuarios"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        Uuid,
+        primary_key=True,
+        default=uuid.uuid4,
+    )
+
+    nombre_completo: Mapped[str] = mapped_column(
+        String(150),
+        nullable=False,
+    )
+
+    correo: Mapped[str] = mapped_column(
+        String(150),
+        nullable=False,
+        unique=True,
+    )
+
+    contrasena_hash: Mapped[str] = mapped_column(
+        String(250),
+        nullable=False,
+    )
+
+    rol: Mapped[RolEnum] = mapped_column(
+        Enum(RolEnum, values_callable=lambda enum_cls: [e.value for e in enum_cls]),
+        nullable=False,
+    )
+
+    activo: Mapped[bool] = mapped_column(
+        nullable=False,
+        default=True,
+    )
+
+    fecha_creacion: Mapped[datetime.datetime] = mapped_column(
+        DateTime,
+        server_default=func.now(),
+    )
+
+    numero_licencia: Mapped[Optional[str]] = mapped_column(
+        String(50),
+        unique=True,
+    )
+
+    telefono: Mapped[Optional[str]] = mapped_column(
+        String(20),
+    )
+
+    fecha_vinculacion: Mapped[Optional[datetime.date]] = mapped_column(
+        Date,
+    )
+
+    __table_args__ = (
+        CheckConstraint(
+            "(rol = 'conductor' AND numero_licencia IS NOT NULL AND fecha_vinculacion IS NOT NULL) "
+            "OR (rol <> 'conductor')",
+            name="ck_usuario_campos_conductor",
+        ),
+    )
