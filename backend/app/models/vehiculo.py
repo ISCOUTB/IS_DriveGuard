@@ -8,10 +8,10 @@ from typing import TYPE_CHECKING, Optional
 from sqlalchemy import Enum, String, Uuid
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from .base import Base
+from app.models.base import Base
 
 if TYPE_CHECKING:
-    from models.sesion import Sesion
+    from app.models.sesion import Sesion
 
 
 class TipoVehiculoEnum(str, enum.Enum):

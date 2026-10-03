@@ -9,10 +9,10 @@ from typing import TYPE_CHECKING, Optional
 from sqlalchemy import Numeric, String, Text, Uuid
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from models.base import Base
+from app.models.base import Base
 
 if TYPE_CHECKING:
-    from models.evento import Evento
+    from app.models.evento import Evento
 
 
 class TipoIncidente(Base):

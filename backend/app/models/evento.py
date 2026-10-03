@@ -1,9 +1,4 @@
-"""
-Modelo ORM de Event (SQLAlchemy).
-Definir columnas segun el modelo de datos acordado con el equipo.
-"""
 
-# models/evento.py
 """
 Modelo ORM de Evento (incidente de fatiga detectado).
 
@@ -19,11 +14,11 @@ from typing import TYPE_CHECKING, Optional
 from sqlalchemy import DateTime, Enum, ForeignKey, Numeric, Text, Uuid, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from models.base import Base
+from app.models.base import Base
 
 if TYPE_CHECKING:
-    from models.sesion import Sesion
-    from models.tipo_incidente import TipoIncidente
+    from app.models.sesion import Sesion
+    from app.models.tipo_incidente import TipoIncidente
 
 
 class SeveridadEnum(str, enum.Enum):

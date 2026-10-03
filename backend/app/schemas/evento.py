@@ -12,7 +12,7 @@ from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from models.evento import SeveridadEnum
+from app.models.evento import SeveridadEnum
 
 
 class EventoBase(BaseModel):

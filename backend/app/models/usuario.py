@@ -6,13 +6,14 @@ conductor, supervisor de flota o administrador.
 import datetime
 import enum
 import uuid
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 
 from sqlalchemy import CheckConstraint, Date, DateTime, Enum, String, Uuid, func
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from models.base import Base
-
+from app.models.base import Base
+if TYPE_CHECKING:
+    from app.models.sesion import Sesion # type: ignore
 
 class RolEnum(str, enum.Enum):
     """El rol de un usuario solo puede ser administrador, conductor o supervisor."""
@@ -74,6 +75,8 @@ class Usuario(Base):
         Date,
     )
 
+    sesiones: Mapped[list["Sesion"]] = relationship(back_populates="conductor")
+    
     __table_args__ = (
         CheckConstraint(
             "(rol = 'conductor' AND numero_licencia IS NOT NULL AND fecha_vinculacion IS NOT NULL) "

@@ -11,12 +11,12 @@ from typing import TYPE_CHECKING, Optional
 from sqlalchemy import DateTime, Enum, ForeignKey, Uuid
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from models.base import Base
+from app.models.base import Base
 
 if TYPE_CHECKING:
-    from models.evento import Evento
-    from models.usuario import Usuario
-    from models.vehiculo import Vehiculo
+    from app.models.evento import Evento
+    from app.models.usuario import Usuario
+    from app.models.vehiculo import Vehiculo
 
 
 class EstadoSesionEnum(str, enum.Enum):

@@ -10,8 +10,8 @@ from alembic import context
 # Permite importar el paquete "app" al correr alembic desde la carpeta backend/
 sys.path.append(str(Path(__file__).resolve().parents[1]))
 
-from app.core.config import settings  # noqa: E402
-from app.core.database import Base  # noqa: E402
+from app.core.config import settings
+from app.models import Base, Usuario, Vehiculo, TipoIncidente, Sesion, Evento
 
 # Importar aqui cada modelo para que Alembic los detecte al generar migraciones
 # automaticas (autogenerate). Se van agregando a medida que se crean en models/.
