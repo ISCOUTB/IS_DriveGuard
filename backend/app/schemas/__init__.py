@@ -1,15 +1,15 @@
 # schemas/__init__.py
-from schemas.auth import LoginRequest, TokenPayload, TokenResponse
-from schemas.evento import EventoBase, EventoCreate, EventoRead, EventoUpdate
-from schemas.sesion import SesionBase, SesionCreate, SesionRead, SesionUpdate
-from schemas.tipo_incidente import (
+from app.schemas.auth import LoginRequest, TokenPayload, TokenResponse
+from app.schemas.evento import EventoBase, EventoCreate, EventoRead, EventoUpdate
+from app.schemas.sesion import SesionBase, SesionCreate, SesionRead, SesionUpdate
+from app.schemas.tipo_incidente import (
     TipoIncidenteBase,
     TipoIncidenteCreate,
     TipoIncidenteRead,
     TipoIncidenteUpdate,
 )
-from schemas.usuario import UsuarioBase, UsuarioCreate, UsuarioRead, UsuarioUpdate
-from schemas.vehiculo import VehiculoBase, VehiculoCreate, VehiculoRead, VehiculoUpdate
+from app.schemas.usuario import UsuarioBase, UsuarioCreate, UsuarioRead, UsuarioUpdate
+from app.schemas.vehiculo import VehiculoBase, VehiculoCreate, VehiculoRead, VehiculoUpdate
 
 __all__ = [
     "LoginRequest",
