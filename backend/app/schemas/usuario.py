@@ -18,9 +18,9 @@ class UsuarioBase(BaseModel):
 
 
 class UsuarioCreate(UsuarioBase):
-    password: str = Field(min_length=8)
+    password: str = Field(min_length=8, max_length=72)
     rol: RolEnum
-    numero_licencia: Optional[str] = Field(default=None, max_length=72)
+    numero_licencia: Optional[str] = Field(default=None, max_length=50)
     fecha_vinculacion: Optional[datetime.date] = None
 
     @model_validator(mode="after")
