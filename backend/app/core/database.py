@@ -7,7 +7,16 @@ from app.models.base import Base
 
 from app.core.config import settings
 
-engine = create_engine(settings.DATABASE_URL)
+
+def _normalizar_url(url: str) -> str:
+    # SQLAlchemy 2.x usa psycopg (v3) por defecto para "postgresql://", pero el
+    # proyecto declara psycopg2-binary; se fija el driver para no exigir psycopg.
+    if url.startswith("postgresql://"):
+        return url.replace("postgresql://", "postgresql+psycopg2://", 1)
+    return url
+
+
+engine = create_engine(_normalizar_url(settings.DATABASE_URL))
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 
