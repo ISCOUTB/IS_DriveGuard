@@ -1,0 +1,4 @@
+-r requirements.txt
+pytest>=8,<10
+# Integración con rutas/esquemas reales, sin tocar sus fuentes.
+-r ../backend/requirements.txt
