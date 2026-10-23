@@ -1,0 +1,5 @@
+# Face Mesh legacy de 468 puntos: Python 3.10–3.12. No instalar opencv-python además.
+mediapipe==0.10.18
+opencv-contrib-python==4.11.0.86
+numpy>=1.26,<2
+sounddevice>=0.4,<1
