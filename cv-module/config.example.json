@@ -10,10 +10,5 @@
   "yaw_degrees": 30,
   "roll_degrees": 25,
   "head_seconds": 1.5,
-  "queue_path": "events.sqlite3",
-  "api_url": "http://localhost:8000",
-  "session_id": "",
-  "eye_type_id": "",
-  "yawn_type_id": "",
-  "head_type_id": ""
+  "queue_path": "events.sqlite3"
 }

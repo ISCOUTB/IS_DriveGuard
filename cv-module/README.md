@@ -7,38 +7,51 @@ señal; al desaparecer el rostro o interrumpirse los frames se reinician tiempos
 Riesgo: 0 señales=baja/sin alerta, 1=media, 2 o 3=alta; score 0–3.
 Los umbrales iniciales son orientativos: calibrar con la cámara y el conductor.
 
-## Instalar y ejecutar
+## Ejecutar en un computador local
 
-Desde `cv-module/`, Python **3.10–3.12** (Face Mesh legacy fijado a 0.10.18):
+El módulo corre en un computador con cámara, pantalla y altavoz. No requiere
+Raspberry Pi, Docker, cuenta remota ni servidor en producción. Para empezar,
+solo usa la cámara y guarda los metadatos localmente; el backend es opcional.
+
+Desde la raíz del repositorio, en Linux/macOS con Python 3.12:
 
 ```bash
 python3.12 -m venv .venv
 source .venv/bin/activate
-pip install -r requirements.txt
-cp config.example.json config.local.json
-python -m driveguard --config config.local.json
+pip install -r cv-module/requirements.txt
+cd cv-module
+python -m driveguard --local-only
 ```
 
-En Linux se requieren cámara V4L2, pantalla local, salida de audio/PortAudio
-(p. ej. paquete `libportaudio2` en Debian) y bibliotecas gráficas de OpenCV.
-Usar Raspberry Pi OS de 64 bits y comprobar que hay wheel de MediaPipe para
-su arquitectura/Python antes de instalar. No se instala PyTorch ni TensorFlow;
-MediaPipe incluye su runtime TFLite y declara dependencias transitivas como JAX.
-No se agrega Dockerfile: compose solo ejecuta API/PostgreSQL; el cliente usa
-cámara, pantalla y altavoz del equipo anfitrión.
+Se abre la ventana de cámara y la sesión queda activa hasta pulsar `q`.
+`--local-only` guarda eventos resumidos en `cv-module/events-local.sqlite3`,
+sin solicitar UUID de backend y sin enviar datos por red. Solo incluye UUID,
+fecha/hora, tipo de señal, duración, severidad y métrica; no guarda imágenes,
+video ni identidad del conductor. El SQLite permanece en el computador. No
+subas el archivo de eventos al repositorio.
 
-Configurar en JSON `session_id`, `eye_type_id`, `yawn_type_id`, `head_type_id`
-con UUID **existentes** y `api_url`. El conductor se obtiene de la sesión en el
-backend, no de un campo adicional. Actualmente no hay endpoints de sesiones ni
-del catálogo de tipos: un responsable debe preparar esos registros en la BD.
-No existen identificadores o credenciales de producción en este repositorio.
+En Windows, crea el entorno con `py -3.12 -m venv .venv`, activa con
+`.venv\Scripts\Activate.ps1`, instala `pip install -r cv-module/requirements.txt`
+y ejecuta `cd cv-module; python -m driveguard --local-only`.
+MediaPipe 0.10.18 publica wheel ARM64 si en otro momento se necesita, pero el
+objetivo de esta prueba es la cámara integrada del computador.
 
-Credenciales solo en variables de entorno: `DG_TOKEN` (JWT Bearer), o
-`DG_EMAIL` y `DG_PASSWORD` para `POST /auth/login` JSON `{correo,password}`.
-Si un JWT expira, se vuelve a autenticar si existen las dos credenciales;
-con token solo, configurar uno nuevo y reiniciar: los eventos siguen en cola.
-No guardar credenciales en JSON ni en Git. Utilizar HTTPS fuera de localhost.
-Sin `api_url`, las alertas y el registro local funcionan sin sincronización.
+Para comprobar primero las alertas sin abrir la cámara, corre la simulación:
+
+```bash
+python -m driveguard --simulate --frames 360 --headless --silent
+```
+
+Para salir de la cámara pulsa `q`. Si Windows/macOS/Linux no reconoce la cámara,
+prueba otro `camera_index` en `config.local.json`; cámara integrada suele ser 0.
+Asegura que ninguna otra aplicación tenga la cámara ocupada. Se puede limitar
+la sesión con `--frames 300` mientras ajustas el encuadre. Si no se abre el
+altavoz o la cámara, la aplicación informa el error y libera recursos.
+
+El envío al backend se activa solo si se omite `--local-only`, `api_url` apunta
+a una API disponible y se configuran UUID existentes de sesión y de los tres
+tipos de incidente. Para el ejercicio local basta el modo anterior; la API no
+es necesaria para probar detección ni alertas.
 
 Todos los campos de `Config` admiten `DG_NOMBRE_EN_MAYUSCULAS`, con precedencia
 sobre JSON. Principales valores por defecto:
@@ -74,7 +87,7 @@ reintenta el mismo UUID: la idempotencia del backend evita duplicados.
 Errores de red/auth/404/422 conservan la cola y generan aviso sin volcar payloads;
 corregir configuración o credenciales y reiniciar. Un fallo de disco termina
 explícitamente tras emitir la alerta local; no se promete persistencia con disco averiado.
-Conservar la BD al reiniciar y no reutilizar la cola de simulación en producción.
+Conservar `events.sqlite3` al reiniciar y no usar la cola de simulación para eventos reales.
 Solo se almacenan metadatos con permisos 0600: nunca imágenes ni video. Los
 frames viven en RAM; tampoco se guardan JWT o contraseñas en la cola.
 
@@ -106,13 +119,13 @@ MediaPipe 0.10.18, 640×480, 120 frames por prueba, sin ventana ni sonido:
 
 La prueba con rostro decodificó en RAM la [imagen pública de MediaPipe](https://storage.googleapis.com/mediapipe-assets/portrait.jpg)
 y la procesó 120 veces (120 detecciones); excluye captura, GUI y audio. No se
-escribió la imagen. No equivale a video real ni a rendimiento en Raspberry Pi.
-La cámara incluye la primera lectura lenta; **no cumple ≥15 FPS ni <200 ms en
-todos los frames**. No se declara cumplido RNF-01 en hardware objetivo.
+escribió la imagen. No equivale a video real ni al rendimiento de la cámara integrada.
+La medición de cámara incluye la primera lectura lenta y no detectó rostro; es
+un dato de referencia de este mismo PC. Probar la cámara local con el rostro
+frente a ella y ajustar el índice si hace falta.
 El audio real abrió su stream: primer callback con tono a 18.92 ms tras disparar;
 esto mide entrega a PortAudio, no audibilidad física. La simulación ejecuta 12 s
 de señales en tiempo virtual sin esperar esos 12 s: sus FPS no son rendimiento CV.
 Resultado final: **23 tests pasan**, con un aviso de deprecación de TestClient/httpx
 procedente de dependencias del backend. Incluye HTTP loopback con urllib real.
-Pendiente: configurar URL/JWT/sesión/tipos reales, calibrar y validar captura con
-rostro, pantalla y altavoz en Raspberry Pi (≥15 FPS, <200 ms y alerta física <1 s).
+Pendiente para el computador local: probar la sesión con el rostro frente a la cámara integrada y calibrar umbrales. El rendimiento depende de la cámara y la iluminación.

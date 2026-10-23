@@ -139,3 +139,10 @@ def test_http_transport_real_backend(client, admin_usuario, sesion_y_tipo, tmp_p
         server.shutdown()
         server.server_close()
         thread.join(timeout=1)
+
+
+def test_local_only_event_does_not_require_backend_ids():
+    config = Config()
+    event = event_payload(config, Signal('eye', 1.5, 0.1), 'media', local_only=True)
+    assert set(event) == {'id', 'fecha_hora', 'tipo', 'duracion_segundos', 'severidad', 'valor_metrica'}
+    assert event['tipo'] == 'eye'

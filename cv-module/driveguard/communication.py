@@ -14,7 +14,16 @@ from urllib.request import Request, urlopen
 log = logging.getLogger(__name__)
 
 
-def event_payload(config, signal, severity):
+def event_payload(config, signal, severity, *, local_only=False):
+    if local_only:
+        return {
+            'id': str(uuid.uuid4()),
+            'fecha_hora': datetime.now(timezone.utc).isoformat(),
+            'tipo': signal.name,
+            'duracion_segundos': round(min(signal.duration, 999.99), 2),
+            'severidad': severity,
+            'valor_metrica': round(signal.value, 3),
+        }
     return {'id': str(uuid.uuid4()), 'sesion_id': config.session_id,
             'tipo_incidente_id': getattr(config, signal.name + '_type_id'),
             'fecha_hora': datetime.now(timezone.utc).isoformat(),

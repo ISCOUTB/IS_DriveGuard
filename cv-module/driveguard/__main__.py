@@ -16,6 +16,7 @@ def main():
     parser.add_argument('--config', help='Archivo JSON; DG_* tiene precedencia')
     parser.add_argument('--simulate', action='store_true', help='Señales sintéticas, sin cámara ni red')
     parser.add_argument('--benchmark', action='store_true', help='Face Mesh sobre frames negros en memoria; sin cámara/red')
+    parser.add_argument('--local-only', action='store_true', help='Cámara, alertas y eventos locales; sin backend/UUID')
     parser.add_argument('--frames', type=int, default=None, help='Fotogramas; por defecto cámara continua, simulación 360')
     parser.add_argument('--headless', action='store_true', help='Sin ventana, solo verificación de rendimiento')
     parser.add_argument('--silent', action='store_true', help='Sin sonido, solo verificación')
@@ -27,18 +28,21 @@ def main():
     logging.basicConfig(level=logging.INFO, format='%(levelname)s %(message)s')
     config = load(args.config)
     testing = args.simulate or args.benchmark
+    local_only = args.local_only and not testing
+    if local_only and config.queue_path == 'events.sqlite3':
+        config = replace(config, queue_path='events-local.sqlite3')
     if testing:
         # Identidades ficticias exclusivamente para cola local de simulación.
         config = replace(config, session_id=str(uuid.UUID(int=1)), eye_type_id=str(uuid.UUID(int=2)),
                          yawn_type_id=str(uuid.UUID(int=3)), head_type_id=str(uuid.UUID(int=4)))
         if config.queue_path == 'events.sqlite3':
             config = replace(config, queue_path='simulation.sqlite3')
-    else:
+    elif not local_only:
         config.validate_identity()
     from .alerts import Alerts
     detector = Detector(config)
     outbox = Outbox(config.queue_path)
-    worker = SyncWorker(outbox, API(config), config) if config.api_url and not testing else None
+    worker = SyncWorker(outbox, API(config), config) if config.api_url and not testing and not local_only else None
     alerts = mesh = camera = None
     latencies, capture_times, alert_times = [], [], []
     count = 0
@@ -80,7 +84,7 @@ def main():
             keep_running = args.headless or alerts.draw(frame, risk, metrics is not None)
             # Ambas alertas preceden al disco; fallar explícitamente si no se puede persistir.
             for signal in risk.new:
-                outbox.enqueue(event_payload(config, signal, risk.severity))
+                outbox.enqueue(event_payload(config, signal, risk.severity, local_only=local_only))
             if not keep_running:
                 break
             capture_times.append((capture_end - frame_start) * 1000)
@@ -102,7 +106,7 @@ def main():
         if latencies:
             import statistics
             ordered = sorted(latencies)
-            report = {'mode': 'simulate-rules' if args.simulate else 'mesh-blank' if args.benchmark else 'camera',
+            report = {'mode': 'simulate-rules' if args.simulate else 'mesh-blank' if args.benchmark else 'local-camera' if local_only else 'camera',
                       'frames': count, 'fps': round(count / elapsed, 2),
                       'frame_mean_ms': round(statistics.mean(latencies), 3),
                       'frame_p95_ms': round(ordered[int((len(ordered)-1)*0.95)], 3),
