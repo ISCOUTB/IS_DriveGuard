@@ -1,0 +1,14 @@
+{
+  "camera_index": 0,
+  "width": 640,
+  "height": 480,
+  "ear_threshold": 0.21,
+  "eye_seconds": 1.5,
+  "mar_threshold": 0.6,
+  "yawn_seconds": 1.0,
+  "pitch_degrees": 20,
+  "yaw_degrees": 30,
+  "roll_degrees": 25,
+  "head_seconds": 1.5,
+  "queue_path": "events.sqlite3"
+}
