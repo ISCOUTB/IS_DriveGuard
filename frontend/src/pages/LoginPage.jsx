@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ShieldAlert, Lock, Mail, ArrowRight } from "lucide-react";
-import { loginMock } from "../services/mockApi";
+import { login } from "../services/api";
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -15,7 +15,7 @@ export default function LoginPage() {
     setError("");
     setLoading(true);
     try {
-      await loginMock(correo, password);
+      await login(correo, password);
       navigate("/dashboard");
     } catch (err) {
       setError(err.message || "Error al iniciar sesión");

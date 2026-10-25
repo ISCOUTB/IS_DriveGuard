@@ -3,7 +3,7 @@ import PrivateRoute from "./components/PrivateRoute";
 import DashboardPage from "./pages/DashboardPage";
 import IncidentDetailPage from "./pages/IncidentDetailPage";
 import LoginPage from "./pages/LoginPage";
-import { isAuthenticated } from "./services/mockApi";
+import { isAuthenticated } from "./services/api";
 
 function App() {
   return (

@@ -14,7 +14,12 @@ import {
 } from "lucide-react";
 import AmbientBackground from "../components/AmbientBackground";
 import Navbar from "../components/Navbar";
-import { getEventByIdMock, updateEventMock } from "../services/mockApi";
+import {
+  formatearFecha,
+  getCurrentUser,
+  getEventoDetallado,
+  updateEvento,
+} from "../services/api";
 
 const GLASS_CARD =
   "rounded-3xl border border-white/15 bg-white/[0.07] shadow-[0_8px_40px_0_rgba(0,0,0,0.35),inset_0_1px_1px_0_rgba(255,255,255,0.25)] backdrop-blur-3xl";
@@ -34,10 +39,13 @@ export default function IncidentDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [updating, setUpdating] = useState(false);
+  const actual = getCurrentUser();
+  const puedeRevisar =
+    actual?.rol === "supervisor" || actual?.rol === "administrador";
 
   useEffect(() => {
     let isMounted = true;
-    getEventByIdMock(id)
+    getEventoDetallado(id)
       .then((data) => {
         if (isMounted) setEvent(data);
       })
@@ -57,10 +65,10 @@ export default function IncidentDetailPage() {
     if (!event) return;
     setUpdating(true);
     try {
-      const updated = await updateEventMock(event.id, {
+      const updated = await updateEvento(event.id, {
         revisado: !event.revisado,
       });
-      setEvent(updated);
+      setEvent((prev) => ({ ...prev, ...updated }));
     } catch (err) {
       alert("Error al actualizar estado del incidente: " + err.message);
     } finally {
@@ -125,38 +133,40 @@ export default function IncidentDetailPage() {
                       <Calendar className="h-3.5 w-3.5 text-amber-200/70" strokeWidth={1.75} />
                       Ocurrencia:{" "}
                       <strong className="font-medium text-white/90">
-                        {new Date(event.fecha_hora).toLocaleString("es-CO")}
+                        {formatearFecha(event.fecha_hora)}
                       </strong>
                     </span>
                     <span className="text-white/25">•</span>
                     <span>
                       Sincronizado:{" "}
                       <strong className="font-medium text-white/90">
-                        {new Date(event.fecha_recepcion).toLocaleString("es-CO")}
+                        {formatearFecha(event.fecha_recepcion)}
                       </strong>
                     </span>
                   </div>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={toggleReviewedStatus}
-                  disabled={updating}
-                  className={`inline-flex items-center justify-center gap-2 rounded-xl border px-4 py-2.5 text-xs font-semibold shadow-[inset_0_1px_0_0_rgba(255,255,255,0.25)] transition disabled:opacity-50 ${
-                    event.revisado
-                      ? "border-white/15 bg-white/10 text-white/85 hover:bg-white/20"
-                      : "border-amber-300/50 bg-gradient-to-br from-amber-300/90 to-amber-500/90 text-slate-950 shadow-[0_4px_20px_0_rgba(245,158,11,0.4)] hover:from-amber-200 hover:to-amber-400"
-                  }`}
-                >
-                  <ShieldCheck className="h-4 w-4" strokeWidth={1.75} />
-                  <span>
-                    {updating
-                      ? "Guardando..."
-                      : event.revisado
-                      ? "Marcar como pendiente"
-                      : "Marcar como revisado"}
-                  </span>
-                </button>
+                {puedeRevisar && (
+                  <button
+                    type="button"
+                    onClick={toggleReviewedStatus}
+                    disabled={updating}
+                    className={`inline-flex items-center justify-center gap-2 rounded-xl border px-4 py-2.5 text-xs font-semibold shadow-[inset_0_1px_0_0_rgba(255,255,255,0.25)] transition disabled:opacity-50 ${
+                      event.revisado
+                        ? "border-white/15 bg-white/10 text-white/85 hover:bg-white/20"
+                        : "border-amber-300/50 bg-gradient-to-br from-amber-300/90 to-amber-500/90 text-slate-950 shadow-[0_4px_20px_0_rgba(245,158,11,0.4)] hover:from-amber-200 hover:to-amber-400"
+                    }`}
+                  >
+                    <ShieldCheck className="h-4 w-4" strokeWidth={1.75} />
+                    <span>
+                      {updating
+                        ? "Guardando..."
+                        : event.revisado
+                        ? "Marcar como pendiente"
+                        : "Marcar como revisado"}
+                    </span>
+                  </button>
+                )}
               </div>
             </div>
 

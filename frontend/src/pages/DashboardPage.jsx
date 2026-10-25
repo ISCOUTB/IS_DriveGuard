@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   AlertTriangle,
@@ -11,11 +11,7 @@ import {
 import AmbientBackground from "../components/AmbientBackground";
 import Navbar from "../components/Navbar";
 import StatCard from "../components/StatCard";
-import {
-  getDriversMock,
-  getEventsMock,
-  getIncidentTypesMock,
-} from "../services/mockApi";
+import { formatearFecha, getDashboardData } from "../services/api";
 
 const GLASS_CARD =
   "rounded-3xl border border-white/15 bg-white/[0.07] shadow-[0_8px_40px_0_rgba(0,0,0,0.35),inset_0_1px_1px_0_rgba(255,255,255,0.25)] backdrop-blur-3xl";
@@ -34,9 +30,12 @@ const severityBadge = {
 
 export default function DashboardPage() {
   const [events, setEvents] = useState([]);
+  const [summary, setSummary] = useState(null);
   const [drivers, setDrivers] = useState([]);
   const [types, setTypes] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const requestIdRef = useRef(0);
 
   // Filtros
   const [selectedDriver, setSelectedDriver] = useState("");
@@ -44,27 +43,44 @@ export default function DashboardPage() {
   const [selectedSeverity, setSelectedSeverity] = useState("");
   const [selectedReviewed, setSelectedReviewed] = useState("");
 
+  const handleFilterChange = (setter, currentValue) => (event) => {
+    const value = event.target.value;
+    if (value === currentValue) return;
+    setError("");
+    setLoading(true);
+    setter(value);
+  };
+
   const loadData = useCallback(() => {
     const filters = {};
-    if (selectedDriver) filters.driver_id = selectedDriver;
+    if (selectedDriver) filters.conductor_id = selectedDriver;
     if (selectedType) filters.tipo_incidente_id = selectedType;
     if (selectedSeverity) filters.severidad = selectedSeverity;
     if (selectedReviewed !== "") filters.revisado = selectedReviewed === "true";
 
-    Promise.all([
-      getEventsMock(filters),
-      getDriversMock(),
-      getIncidentTypesMock(),
-    ])
-      .then(([eventsData, driversData, typesData]) => {
-        setEvents(eventsData);
-        setDrivers(driversData);
-        setTypes(typesData);
+    const requestId = ++requestIdRef.current;
+    getDashboardData(filters)
+      .then(({ eventos, resumen, conductores, tipos }) => {
+        if (requestId !== requestIdRef.current) return;
+        setEvents(eventos);
+        setSummary(resumen);
+        setDrivers(conductores);
+        setTypes(tipos);
+        setError("");
       })
-      .finally(() => setLoading(false));
+      .catch((err) => {
+        if (requestId !== requestIdRef.current) return;
+        setEvents([]);
+        setSummary(null);
+        setError(err.message || "No se pudieron cargar los incidentes");
+      })
+      .finally(() => {
+        if (requestId === requestIdRef.current) setLoading(false);
+      });
   }, [selectedDriver, selectedType, selectedSeverity, selectedReviewed]);
 
   const handleManualRefresh = () => {
+    setError("");
     setLoading(true);
     loadData();
   };
@@ -73,7 +89,8 @@ export default function DashboardPage() {
     loadData();
   }, [loadData]);
 
-  const highSeverityCount = events.filter((e) => e.severidad === "alta").length;
+  const totalCount = summary?.total ?? 0;
+  const highSeverityCount = summary?.por_severidad?.alta ?? 0;
   const pendingCount = events.filter((e) => !e.revisado).length;
 
   return (
@@ -109,7 +126,7 @@ export default function DashboardPage() {
         <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
           <StatCard
             title="Total de incidentes"
-            value={events.length}
+            value={totalCount}
             subtitle="Filtro activo actual"
             icon={<AlertTriangle className="h-5 w-5 text-amber-200/80" strokeWidth={1.75} />}
           />
@@ -122,7 +139,7 @@ export default function DashboardPage() {
           <StatCard
             title="Pendientes de revisión"
             value={pendingCount}
-            subtitle="Requieren acción del supervisor"
+            subtitle="En los resultados mostrados"
             icon={<Clock className="h-5 w-5 text-amber-200/80" strokeWidth={1.75} />}
           />
         </div>
@@ -139,13 +156,14 @@ export default function DashboardPage() {
               <label className={labelClass}>Conductor</label>
               <select
                 value={selectedDriver}
-                onChange={(e) => setSelectedDriver(e.target.value)}
+                onChange={handleFilterChange(setSelectedDriver, selectedDriver)}
                 className={selectClass}
               >
                 <option value="">Todos los conductores</option>
                 {drivers.map((d) => (
                   <option key={d.id} value={d.id}>
-                    {d.nombre} ({d.identificacion})
+                    {d.nombre_completo}
+                    {d.numero_licencia ? ` (${d.numero_licencia})` : ""}
                   </option>
                 ))}
               </select>
@@ -155,13 +173,13 @@ export default function DashboardPage() {
               <label className={labelClass}>Tipo de Incidente</label>
               <select
                 value={selectedType}
-                onChange={(e) => setSelectedType(e.target.value)}
+                onChange={handleFilterChange(setSelectedType, selectedType)}
                 className={selectClass}
               >
                 <option value="">Todos los tipos</option>
                 {types.map((t) => (
                   <option key={t.id} value={t.id}>
-                    {t.etiqueta}
+                    {t.nombre}
                   </option>
                 ))}
               </select>
@@ -171,7 +189,7 @@ export default function DashboardPage() {
               <label className={labelClass}>Severidad</label>
               <select
                 value={selectedSeverity}
-                onChange={(e) => setSelectedSeverity(e.target.value)}
+                onChange={handleFilterChange(setSelectedSeverity, selectedSeverity)}
                 className={selectClass}
               >
                 <option value="">Todas las severidades</option>
@@ -185,7 +203,7 @@ export default function DashboardPage() {
               <label className={labelClass}>Estado de Revisión</label>
               <select
                 value={selectedReviewed}
-                onChange={(e) => setSelectedReviewed(e.target.value)}
+                onChange={handleFilterChange(setSelectedReviewed, selectedReviewed)}
                 className={selectClass}
               >
                 <option value="">Todos los estados</option>
@@ -207,7 +225,15 @@ export default function DashboardPage() {
             </span>
           </div>
 
-          {loading ? (
+          {error ? (
+            <div className="flex flex-col items-center justify-center gap-2 p-12 text-center">
+              <AlertTriangle className="h-8 w-8 text-red-300" strokeWidth={1.75} />
+              <p className="text-sm font-medium text-red-200">{error}</p>
+              <p className="text-xs text-white/50">
+                Verifica que la API esté en marcha y vuelve a intentarlo.
+              </p>
+            </div>
+          ) : loading ? (
             <div className="flex items-center justify-center p-12 text-sm text-white/60">
               <RefreshCw className="mr-2 h-4 w-4 animate-spin text-amber-200/80" strokeWidth={1.75} />
               Cargando incidentes...
@@ -234,7 +260,7 @@ export default function DashboardPage() {
                   {events.map((e) => (
                     <tr key={e.id} className="transition hover:bg-white/[0.06]">
                       <td className="whitespace-nowrap px-6 py-4 text-xs font-normal tabular-nums text-white/75">
-                        {new Date(e.fecha_hora).toLocaleString("es-CO", {
+                        {formatearFecha(e.fecha_hora, {
                           dateStyle: "short",
                           timeStyle: "medium",
                         })}
