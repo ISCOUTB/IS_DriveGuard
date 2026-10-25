@@ -1,13 +1,13 @@
 import { LogOut, ShieldAlert, User } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
-import { getCurrentUser, logoutMock } from "../services/mockApi";
+import { getCurrentUser, logout } from "../services/api";
 
 export default function Navbar() {
   const navigate = useNavigate();
   const user = getCurrentUser();
 
   const handleLogout = () => {
-    logoutMock();
+    logout();
     navigate("/login");
   };
 

@@ -1,5 +1,5 @@
 import { Navigate } from "react-router-dom";
-import { isAuthenticated } from "../services/mockApi";
+import { isAuthenticated } from "../services/api";
 
 export default function PrivateRoute({ children }) {
   if (!isAuthenticated()) {
