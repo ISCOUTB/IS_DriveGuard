@@ -1,0 +1,2505 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Driver Fatigue Detection API",
+    "description": "API para el sistema de deteccion de fatiga y somnolencia en conduccion.",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/auth/login": {
+      "post": {
+        "tags": ["auth"],
+        "summary": "Login",
+        "description": "Valida credenciales y devuelve un JWT con el id y el rol del usuario.",
+        "operationId": "login_auth_login_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/me": {
+      "get": {
+        "tags": ["auth"],
+        "summary": "Me",
+        "description": "Perfil del usuario autenticado.",
+        "operationId": "me_auth_me_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UsuarioRead"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/usuarios": {
+      "post": {
+        "tags": ["usuarios"],
+        "summary": "Crear Usuario",
+        "description": "Crea un usuario de cualquier rol. Solo administrador.",
+        "operationId": "crear_usuario_usuarios_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UsuarioCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UsuarioRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": ["usuarios"],
+        "summary": "Listar Usuarios",
+        "description": "Lista usuarios. El supervisor solo ve conductores.",
+        "operationId": "listar_usuarios_usuarios_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "rol",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/RolEnum"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Rol"
+            }
+          },
+          {
+            "name": "activo",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Activo"
+            }
+          },
+          {
+            "name": "skip",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Skip"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/UsuarioRead"
+                  },
+                  "title": "Response Listar Usuarios Usuarios Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/usuarios/{usuario_id}": {
+      "get": {
+        "tags": ["usuarios"],
+        "summary": "Obtener Usuario",
+        "description": "Administrador: cualquiera. Supervisor: conductores. Cualquiera: su propio perfil.",
+        "operationId": "obtener_usuario_usuarios__usuario_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "usuario_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Usuario Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UsuarioRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": ["usuarios"],
+        "summary": "Actualizar Usuario",
+        "description": "Administrador: edita cualquier campo (incluida la baja con activo=false).\nOtros roles: solo nombre_completo y telefono de su propio perfil.",
+        "operationId": "actualizar_usuario_usuarios__usuario_id__patch",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "usuario_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Usuario Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UsuarioUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UsuarioRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/vehiculos": {
+      "post": {
+        "tags": ["vehiculos"],
+        "summary": "Crear Vehiculo",
+        "description": "Registra un vehiculo. Administrador o supervisor.",
+        "operationId": "crear_vehiculo_vehiculos_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VehiculoCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VehiculoRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": ["vehiculos"],
+        "summary": "Listar Vehiculos",
+        "description": "Lista vehiculos. Cualquier usuario autenticado (el conductor elige uno al iniciar sesion).",
+        "operationId": "listar_vehiculos_vehiculos_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "estado",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/EstadoVehiculoEnum"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Estado"
+            }
+          },
+          {
+            "name": "tipo_vehiculo",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/TipoVehiculoEnum"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Tipo Vehiculo"
+            }
+          },
+          {
+            "name": "skip",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Skip"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/VehiculoRead"
+                  },
+                  "title": "Response Listar Vehiculos Vehiculos Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/vehiculos/{vehiculo_id}": {
+      "get": {
+        "tags": ["vehiculos"],
+        "summary": "Obtener Vehiculo",
+        "operationId": "obtener_vehiculo_vehiculos__vehiculo_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "vehiculo_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Vehiculo Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VehiculoRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": ["vehiculos"],
+        "summary": "Actualizar Vehiculo",
+        "description": "Edita datos o cambia el estado (activo, mantenimiento, inactivo). Administrador o supervisor.",
+        "operationId": "actualizar_vehiculo_vehiculos__vehiculo_id__patch",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "vehiculo_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Vehiculo Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VehiculoUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VehiculoRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tipos-incidentes": {
+      "get": {
+        "tags": ["tipos-incidentes"],
+        "summary": "Listar Tipos",
+        "description": "Catalogo completo. El cliente de captura lo consulta para obtener los umbrales vigentes.",
+        "operationId": "listar_tipos_tipos_incidentes_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/TipoIncidenteRead"
+                  },
+                  "type": "array",
+                  "title": "Response Listar Tipos Tipos Incidentes Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": ["tipos-incidentes"],
+        "summary": "Crear Tipo",
+        "description": "Solo administrador.",
+        "operationId": "crear_tipo_tipos_incidentes_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TipoIncidenteCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TipoIncidenteRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/tipos-incidentes/{tipo_id}": {
+      "get": {
+        "tags": ["tipos-incidentes"],
+        "summary": "Obtener Tipo",
+        "operationId": "obtener_tipo_tipos_incidentes__tipo_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "tipo_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Tipo Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TipoIncidenteRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": ["tipos-incidentes"],
+        "summary": "Actualizar Tipo",
+        "description": "Ajusta umbrales y descripcion. Solo administrador.",
+        "operationId": "actualizar_tipo_tipos_incidentes__tipo_id__patch",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "tipo_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Tipo Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TipoIncidenteUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TipoIncidenteRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sesiones": {
+      "post": {
+        "tags": ["sesiones"],
+        "summary": "Iniciar Sesion",
+        "description": "Inicia una sesion (conductor + vehiculo). Requiere conexion: el servidor fija\nfecha_hora_inicio. Un conductor solo puede iniciar sesiones propias.",
+        "operationId": "iniciar_sesion_sesiones_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SesionCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SesionRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": ["sesiones"],
+        "summary": "Listar Sesiones",
+        "description": "Un conductor solo ve sus sesiones; supervisor y administrador ven todas.",
+        "operationId": "listar_sesiones_sesiones_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "conductor_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Conductor Id"
+            }
+          },
+          {
+            "name": "vehiculo_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Vehiculo Id"
+            }
+          },
+          {
+            "name": "estado",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/EstadoSesionEnum"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Estado"
+            }
+          },
+          {
+            "name": "skip",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Skip"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SesionRead"
+                  },
+                  "title": "Response Listar Sesiones Sesiones Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sesiones/{sesion_id}": {
+      "get": {
+        "tags": ["sesiones"],
+        "summary": "Obtener Sesion",
+        "operationId": "obtener_sesion_sesiones__sesion_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "sesion_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Sesion Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SesionRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sesiones/{sesion_id}/finalizar": {
+      "post": {
+        "tags": ["sesiones"],
+        "summary": "Finalizar Sesion",
+        "description": "Cierra la sesion. El cuerpo es opcional: si el cliente cierra el turno estando\noffline puede enviar la fecha_hora_fin real; si no, se usa la hora del servidor.",
+        "operationId": "finalizar_sesion_sesiones__sesion_id__finalizar_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "sesion_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Sesion Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/SesionFinalizar"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Datos"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SesionRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/eventos": {
+      "post": {
+        "tags": ["eventos"],
+        "summary": "Registrar Evento",
+        "description": "Registra un evento. El id lo genera el cliente: si lo reenvia, el servidor responde 200\ncon el evento ya guardado en lugar de duplicarlo.",
+        "operationId": "registrar_evento_eventos_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EventoCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventoRead"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "El evento ya habia sido recibido (reintento idempotente)"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": ["eventos"],
+        "summary": "Listar Eventos",
+        "description": "Eventos filtrados, del mas reciente al mas antiguo. Un conductor solo ve los suyos.",
+        "operationId": "listar_eventos_eventos_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "conductor_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Conductor Id"
+            }
+          },
+          {
+            "name": "vehiculo_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Vehiculo Id"
+            }
+          },
+          {
+            "name": "sesion_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Sesion Id"
+            }
+          },
+          {
+            "name": "tipo_incidente_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Tipo Incidente Id"
+            }
+          },
+          {
+            "name": "severidad",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/SeveridadEnum"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Severidad"
+            }
+          },
+          {
+            "name": "revisado",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Revisado"
+            }
+          },
+          {
+            "name": "desde",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Desde"
+            }
+          },
+          {
+            "name": "hasta",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Hasta"
+            }
+          },
+          {
+            "name": "skip",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Skip"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 200,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/EventoRead"
+                  },
+                  "title": "Response Listar Eventos Eventos Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/eventos/lote": {
+      "post": {
+        "tags": ["eventos"],
+        "summary": "Registrar Lote",
+        "description": "Vacia la cola offline: hasta 500 eventos en una sola transaccion (todo o nada).",
+        "operationId": "registrar_lote_eventos_lote_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EventoLoteCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventoLoteResultado"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/eventos/resumen": {
+      "get": {
+        "tags": ["eventos"],
+        "summary": "Resumen Eventos",
+        "description": "Agregaciones para el dashboard. Un conductor solo ve las suyas.",
+        "operationId": "resumen_eventos_eventos_resumen_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "conductor_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Conductor Id"
+            }
+          },
+          {
+            "name": "vehiculo_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Vehiculo Id"
+            }
+          },
+          {
+            "name": "tipo_incidente_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Tipo Incidente Id"
+            }
+          },
+          {
+            "name": "severidad",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/SeveridadEnum"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Severidad"
+            }
+          },
+          {
+            "name": "desde",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Desde"
+            }
+          },
+          {
+            "name": "hasta",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Hasta"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResumenEventos"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/eventos/{evento_id}": {
+      "get": {
+        "tags": ["eventos"],
+        "summary": "Obtener Evento",
+        "operationId": "obtener_evento_eventos__evento_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "evento_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Evento Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventoRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": ["eventos"],
+        "summary": "Actualizar Evento",
+        "description": "El conductor comenta sus eventos; el supervisor los marca como revisados; el administrador ambos.",
+        "operationId": "actualizar_evento_eventos__evento_id__patch",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "evento_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Evento Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EventoUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventoRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "tags": ["health"],
+        "summary": "Health Check",
+        "description": "Endpoint de salud usado para verificar que el servicio esta corriendo.",
+        "operationId": "health_check_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Health Check Health Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "EstadoSesionEnum": {
+        "type": "string",
+        "enum": ["activa", "finalizada"],
+        "title": "EstadoSesionEnum"
+      },
+      "EstadoVehiculoEnum": {
+        "type": "string",
+        "enum": ["activo", "mantenimiento", "inactivo"],
+        "title": "EstadoVehiculoEnum"
+      },
+      "EventoCreate": {
+        "properties": {
+          "tipo_incidente_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Tipo Incidente Id"
+          },
+          "fecha_hora": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Fecha Hora"
+          },
+          "duracion_segundos": {
+            "type": "number",
+            "exclusiveMaximum": 1000.0,
+            "exclusiveMinimum": 0.0,
+            "title": "Duracion Segundos"
+          },
+          "severidad": {
+            "$ref": "#/components/schemas/SeveridadEnum"
+          },
+          "valor_metrica": {
+            "type": "number",
+            "exclusiveMaximum": 1000.0,
+            "exclusiveMinimum": -1000.0,
+            "title": "Valor Metrica"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "sesion_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Sesion Id"
+          },
+          "comentario_conductor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Comentario Conductor"
+          }
+        },
+        "type": "object",
+        "required": [
+          "tipo_incidente_id",
+          "fecha_hora",
+          "duracion_segundos",
+          "severidad",
+          "valor_metrica",
+          "id",
+          "sesion_id"
+        ],
+        "title": "EventoCreate"
+      },
+      "EventoLoteCreate": {
+        "properties": {
+          "eventos": {
+            "items": {
+              "$ref": "#/components/schemas/EventoCreate"
+            },
+            "type": "array",
+            "maxItems": 500,
+            "minItems": 1,
+            "title": "Eventos"
+          }
+        },
+        "type": "object",
+        "required": ["eventos"],
+        "title": "EventoLoteCreate",
+        "description": "Cola offline del cliente de captura: se envia en un solo request (RNF-02)."
+      },
+      "EventoLoteResultado": {
+        "properties": {
+          "recibidos": {
+            "type": "integer",
+            "title": "Recibidos"
+          },
+          "creados": {
+            "type": "integer",
+            "title": "Creados"
+          },
+          "duplicados": {
+            "type": "integer",
+            "title": "Duplicados"
+          }
+        },
+        "type": "object",
+        "required": ["recibidos", "creados", "duplicados"],
+        "title": "EventoLoteResultado"
+      },
+      "EventoRead": {
+        "properties": {
+          "tipo_incidente_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Tipo Incidente Id"
+          },
+          "fecha_hora": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Fecha Hora"
+          },
+          "duracion_segundos": {
+            "type": "number",
+            "exclusiveMaximum": 1000.0,
+            "exclusiveMinimum": 0.0,
+            "title": "Duracion Segundos"
+          },
+          "severidad": {
+            "$ref": "#/components/schemas/SeveridadEnum"
+          },
+          "valor_metrica": {
+            "type": "number",
+            "exclusiveMaximum": 1000.0,
+            "exclusiveMinimum": -1000.0,
+            "title": "Valor Metrica"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "sesion_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Sesion Id"
+          },
+          "fecha_recepcion": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Fecha Recepcion"
+          },
+          "comentario_conductor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Comentario Conductor"
+          },
+          "revisado": {
+            "type": "boolean",
+            "title": "Revisado"
+          }
+        },
+        "type": "object",
+        "required": [
+          "tipo_incidente_id",
+          "fecha_hora",
+          "duracion_segundos",
+          "severidad",
+          "valor_metrica",
+          "id",
+          "sesion_id",
+          "fecha_recepcion",
+          "revisado"
+        ],
+        "title": "EventoRead"
+      },
+      "EventoUpdate": {
+        "properties": {
+          "comentario_conductor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Comentario Conductor"
+          },
+          "revisado": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revisado"
+          }
+        },
+        "type": "object",
+        "title": "EventoUpdate"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "LoginRequest": {
+        "properties": {
+          "correo": {
+            "type": "string",
+            "format": "email",
+            "title": "Correo"
+          },
+          "password": {
+            "type": "string",
+            "title": "Password"
+          }
+        },
+        "type": "object",
+        "required": ["correo", "password"],
+        "title": "LoginRequest",
+        "description": "Lo que el dashboard envia a POST /auth/login."
+      },
+      "ResumenConductor": {
+        "properties": {
+          "conductor_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Conductor Id"
+          },
+          "nombre_completo": {
+            "type": "string",
+            "title": "Nombre Completo"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          }
+        },
+        "type": "object",
+        "required": ["conductor_id", "nombre_completo", "total"],
+        "title": "ResumenConductor"
+      },
+      "ResumenEventos": {
+        "properties": {
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "por_tipo": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Por Tipo"
+          },
+          "por_severidad": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Por Severidad"
+          },
+          "por_dia": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Por Dia"
+          },
+          "por_conductor": {
+            "items": {
+              "$ref": "#/components/schemas/ResumenConductor"
+            },
+            "type": "array",
+            "title": "Por Conductor"
+          }
+        },
+        "type": "object",
+        "required": [
+          "total",
+          "por_tipo",
+          "por_severidad",
+          "por_dia",
+          "por_conductor"
+        ],
+        "title": "ResumenEventos",
+        "description": "Agregaciones para el dashboard."
+      },
+      "RolEnum": {
+        "type": "string",
+        "enum": ["administrador", "conductor", "supervisor"],
+        "title": "RolEnum",
+        "description": "El rol de un usuario solo puede ser administrador, conductor o supervisor."
+      },
+      "SesionCreate": {
+        "properties": {
+          "conductor_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Conductor Id"
+          },
+          "vehiculo_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Vehiculo Id"
+          }
+        },
+        "type": "object",
+        "required": ["conductor_id", "vehiculo_id"],
+        "title": "SesionCreate"
+      },
+      "SesionFinalizar": {
+        "properties": {
+          "fecha_hora_fin": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fecha Hora Fin"
+          }
+        },
+        "type": "object",
+        "title": "SesionFinalizar",
+        "description": "Cuerpo opcional de POST /sesiones/{id}/finalizar.\nSi se omite fecha_hora_fin, el servidor usa la hora actual (UTC)."
+      },
+      "SesionRead": {
+        "properties": {
+          "conductor_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Conductor Id"
+          },
+          "vehiculo_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Vehiculo Id"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "fecha_hora_inicio": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Fecha Hora Inicio"
+          },
+          "fecha_hora_fin": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fecha Hora Fin"
+          },
+          "estado": {
+            "$ref": "#/components/schemas/EstadoSesionEnum"
+          }
+        },
+        "type": "object",
+        "required": [
+          "conductor_id",
+          "vehiculo_id",
+          "id",
+          "fecha_hora_inicio",
+          "estado"
+        ],
+        "title": "SesionRead"
+      },
+      "SeveridadEnum": {
+        "type": "string",
+        "enum": ["baja", "media", "alta"],
+        "title": "SeveridadEnum"
+      },
+      "TipoIncidenteCreate": {
+        "properties": {
+          "nombre": {
+            "type": "string",
+            "maxLength": 50,
+            "minLength": 1,
+            "title": "Nombre"
+          },
+          "descripcion": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Descripcion"
+          },
+          "unidad_medida": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 20
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unidad Medida"
+          },
+          "umbral_sensibilidad": {
+            "type": "number",
+            "exclusiveMaximum": 10000.0,
+            "exclusiveMinimum": 0.0,
+            "title": "Umbral Sensibilidad"
+          }
+        },
+        "type": "object",
+        "required": ["nombre", "umbral_sensibilidad"],
+        "title": "TipoIncidenteCreate"
+      },
+      "TipoIncidenteRead": {
+        "properties": {
+          "nombre": {
+            "type": "string",
+            "maxLength": 50,
+            "minLength": 1,
+            "title": "Nombre"
+          },
+          "descripcion": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Descripcion"
+          },
+          "unidad_medida": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 20
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unidad Medida"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "umbral_sensibilidad": {
+            "type": "number",
+            "title": "Umbral Sensibilidad"
+          }
+        },
+        "type": "object",
+        "required": ["nombre", "id", "umbral_sensibilidad"],
+        "title": "TipoIncidenteRead"
+      },
+      "TipoIncidenteUpdate": {
+        "properties": {
+          "nombre": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 50,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nombre"
+          },
+          "descripcion": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Descripcion"
+          },
+          "umbral_sensibilidad": {
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMaximum": 10000.0,
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Umbral Sensibilidad"
+          },
+          "unidad_medida": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 20
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unidad Medida"
+          }
+        },
+        "type": "object",
+        "title": "TipoIncidenteUpdate"
+      },
+      "TipoVehiculoEnum": {
+        "type": "string",
+        "enum": ["bus", "camion_carga"],
+        "title": "TipoVehiculoEnum"
+      },
+      "TokenResponse": {
+        "properties": {
+          "access_token": {
+            "type": "string",
+            "title": "Access Token"
+          },
+          "token_type": {
+            "type": "string",
+            "title": "Token Type",
+            "default": "bearer"
+          }
+        },
+        "type": "object",
+        "required": ["access_token"],
+        "title": "TokenResponse",
+        "description": "Lo que el backend devuelve tras un login exitoso."
+      },
+      "UsuarioCreate": {
+        "properties": {
+          "nombre_completo": {
+            "type": "string",
+            "maxLength": 150,
+            "title": "Nombre Completo"
+          },
+          "correo": {
+            "type": "string",
+            "format": "email",
+            "title": "Correo"
+          },
+          "telefono": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 20
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Telefono"
+          },
+          "password": {
+            "type": "string",
+            "maxLength": 72,
+            "minLength": 8,
+            "title": "Password"
+          },
+          "rol": {
+            "$ref": "#/components/schemas/RolEnum"
+          },
+          "numero_licencia": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 50
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Numero Licencia"
+          },
+          "fecha_vinculacion": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fecha Vinculacion"
+          }
+        },
+        "type": "object",
+        "required": ["nombre_completo", "correo", "password", "rol"],
+        "title": "UsuarioCreate"
+      },
+      "UsuarioRead": {
+        "properties": {
+          "nombre_completo": {
+            "type": "string",
+            "maxLength": 150,
+            "title": "Nombre Completo"
+          },
+          "correo": {
+            "type": "string",
+            "format": "email",
+            "title": "Correo"
+          },
+          "telefono": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 20
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Telefono"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "rol": {
+            "$ref": "#/components/schemas/RolEnum"
+          },
+          "activo": {
+            "type": "boolean",
+            "title": "Activo"
+          },
+          "fecha_creacion": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Fecha Creacion"
+          },
+          "numero_licencia": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Numero Licencia"
+          },
+          "fecha_vinculacion": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fecha Vinculacion"
+          }
+        },
+        "type": "object",
+        "required": [
+          "nombre_completo",
+          "correo",
+          "id",
+          "rol",
+          "activo",
+          "fecha_creacion"
+        ],
+        "title": "UsuarioRead"
+      },
+      "UsuarioUpdate": {
+        "properties": {
+          "nombre_completo": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 150
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nombre Completo"
+          },
+          "telefono": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 20
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Telefono"
+          },
+          "numero_licencia": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 50
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Numero Licencia"
+          },
+          "fecha_vinculacion": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fecha Vinculacion"
+          },
+          "activo": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Activo"
+          }
+        },
+        "type": "object",
+        "title": "UsuarioUpdate"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": ["loc", "msg", "type"],
+        "title": "ValidationError"
+      },
+      "VehiculoCreate": {
+        "properties": {
+          "placa": {
+            "type": "string",
+            "maxLength": 10,
+            "title": "Placa"
+          },
+          "tipo_vehiculo": {
+            "$ref": "#/components/schemas/TipoVehiculoEnum"
+          },
+          "marca": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 50
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Marca"
+          },
+          "modelo": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 50
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Modelo"
+          }
+        },
+        "type": "object",
+        "required": ["placa", "tipo_vehiculo"],
+        "title": "VehiculoCreate"
+      },
+      "VehiculoRead": {
+        "properties": {
+          "placa": {
+            "type": "string",
+            "maxLength": 10,
+            "title": "Placa"
+          },
+          "tipo_vehiculo": {
+            "$ref": "#/components/schemas/TipoVehiculoEnum"
+          },
+          "marca": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 50
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Marca"
+          },
+          "modelo": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 50
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Modelo"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "estado": {
+            "$ref": "#/components/schemas/EstadoVehiculoEnum"
+          }
+        },
+        "type": "object",
+        "required": ["placa", "tipo_vehiculo", "id", "estado"],
+        "title": "VehiculoRead"
+      },
+      "VehiculoUpdate": {
+        "properties": {
+          "placa": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 10
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Placa"
+          },
+          "tipo_vehiculo": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TipoVehiculoEnum"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "marca": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 50
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Marca"
+          },
+          "modelo": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 50
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Modelo"
+          },
+          "estado": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EstadoVehiculoEnum"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "VehiculoUpdate"
+      }
+    },
+    "securitySchemes": {
+      "HTTPBearer": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    }
+  }
+}

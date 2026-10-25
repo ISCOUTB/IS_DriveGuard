@@ -12,14 +12,7 @@ from sqlalchemy.orm import Session
 from app.core.security import hash_password
 from app.models.usuario import RolEnum, Usuario
 from app.schemas.usuario import UsuarioCreate, UsuarioUpdate
-
-
-class ConflictoError(Exception):
-    """El recurso ya existe (correo o licencia duplicados). La ruta lo traduce a 409."""
-
-
-class ReglaNegocioError(Exception):
-    """La operacion viola una regla de negocio. La ruta lo traduce a 422."""
+from app.services.errors import ConflictoError, ReglaNegocioError
 
 
 def crear_usuario(db: Session, datos: UsuarioCreate) -> Usuario:

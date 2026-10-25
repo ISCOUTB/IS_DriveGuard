@@ -12,6 +12,8 @@ class Settings(BaseSettings):
     DATABASE_URL: str = "postgresql://postgres:postgres@localhost:5432/fatigue_detection"
     SECRET_KEY: str = "change-this-secret-key"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
+    # Origenes permitidos para el dashboard (separados por coma).
+    CORS_ORIGINS: str = "http://localhost:5173,http://localhost:3000"
 
 
 settings = Settings()

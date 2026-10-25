@@ -11,7 +11,7 @@ from app.api.deps import get_current_user, get_db, require_roles
 from app.models.usuario import RolEnum, Usuario
 from app.schemas.usuario import UsuarioCreate, UsuarioRead, UsuarioUpdate
 from app.services import usuario_service
-from app.services.usuario_service import ConflictoError, ReglaNegocioError
+from app.services.errors import ConflictoError, ReglaNegocioError
 
 router = APIRouter(prefix="/usuarios", tags=["usuarios"])
 

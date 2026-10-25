@@ -20,6 +20,14 @@ class SesionCreate(SesionBase):
     pass
 
 
+class SesionFinalizar(BaseModel):
+    """
+    Cuerpo opcional de POST /sesiones/{id}/finalizar.
+    Si se omite fecha_hora_fin, el servidor usa la hora actual (UTC).
+    """
+    fecha_hora_fin: Optional[datetime.datetime] = None
+
+
 class SesionUpdate(BaseModel):
     fecha_hora_fin: Optional[datetime.datetime] = None
     estado: Optional[EstadoSesionEnum] = None
