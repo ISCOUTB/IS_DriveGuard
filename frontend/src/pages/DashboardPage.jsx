@@ -1,32 +1,45 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import {
+  Activity,
   AlertTriangle,
   CheckCircle2,
   Clock,
   Eye,
-  Filter,
+  ListFilter,
   RefreshCw,
+  ShieldAlert,
+  SlidersHorizontal,
+  Tag,
+  User,
 } from "lucide-react";
 import AmbientBackground from "../components/AmbientBackground";
 import Navbar from "../components/Navbar";
+import SideRail from "../components/SideRail";
 import StatCard from "../components/StatCard";
 import { formatearFecha, getDashboardData } from "../services/api";
 
-const GLASS_CARD =
-  "rounded-3xl border border-white/15 bg-white/[0.07] shadow-[0_8px_40px_0_rgba(0,0,0,0.35),inset_0_1px_1px_0_rgba(255,255,255,0.25)] backdrop-blur-3xl";
-
-const selectClass =
-  "w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-xs text-white shadow-inner backdrop-blur-md transition-all focus:border-amber-400/50 focus:bg-white/10 focus:outline-none focus:ring-2 focus:ring-amber-400/30 [&>option]:bg-slate-900";
-
-const labelClass =
-  "mb-1.5 block text-[0.6875rem] font-semibold uppercase tracking-[0.12em] text-white/55";
-
 const severityBadge = {
-  alta: "bg-red-500/15 text-red-200 border-red-400/30",
-  media: "bg-amber-500/15 text-amber-200 border-amber-400/30",
-  baja: "bg-emerald-500/15 text-emerald-200 border-emerald-400/30",
+  alta: "badge badge-alta",
+  media: "badge badge-media",
+  baja: "badge badge-baja",
 };
+
+const severityIcon = {
+  alta: "text-[#a85448]",
+  media: "text-[#a27a34]",
+  baja: "text-[#267d69]",
+};
+
+function getInitials(name) {
+  if (!name) return "—";
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (!parts.length) return "—";
+  return parts
+    .slice(0, 2)
+    .map((part) => part.charAt(0).toUpperCase())
+    .join("");
+}
 
 export default function DashboardPage() {
   const [events, setEvents] = useState([]);
@@ -89,233 +102,392 @@ export default function DashboardPage() {
     loadData();
   }, [loadData]);
 
+  const scrollToFilters = () => {
+    const section = document.getElementById("filtros");
+    section?.scrollIntoView({ behavior: "smooth", block: "center" });
+    window.setTimeout(() => {
+      section?.querySelector("select")?.focus({ preventScroll: true });
+    }, 420);
+  };
+
+  const scrollToTable = () => {
+    document.getElementById("incidentes")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
   const totalCount = summary?.total ?? 0;
   const highSeverityCount = summary?.por_severidad?.alta ?? 0;
   const pendingCount = events.filter((e) => !e.revisado).length;
 
   return (
-    <div className="relative min-h-screen overflow-hidden text-white">
+    <div className="relative min-h-screen text-ink">
       <AmbientBackground />
-      <Navbar />
 
-      <main className="relative mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
-        {/* Encabezado */}
-        <div className="mb-8 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
-          <div>
-            <h1 className="text-[1.75rem] font-semibold tracking-[-0.02em] text-white drop-shadow-md">
-              Panel de Incidentes
-            </h1>
-            <p className="mt-1 text-sm font-normal text-white/60">
-              Monitoreo y revisión de eventos de fatiga registrados en tiempo real
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={handleManualRefresh}
-            className="inline-flex items-center gap-2 self-start rounded-xl border border-white/15 bg-white/10 px-3.5 py-2 text-xs font-medium text-white/85 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.2)] transition hover:bg-white/20 hover:text-white sm:self-auto"
-          >
-            <RefreshCw
-              className={`h-3.5 w-3.5 text-amber-200/80 ${loading ? "animate-spin" : ""}`}
-              strokeWidth={1.75}
-            />
-            <span>Actualizar</span>
-          </button>
-        </div>
+      <div className="relative z-10 mx-auto w-full max-w-[1500px] px-4 pb-10 pt-4 sm:px-6 lg:pl-[104px] lg:pr-8">
+        <Navbar />
+        <SideRail
+          active="dashboard"
+          onRefresh={handleManualRefresh}
+          onFilter={scrollToFilters}
+          onTable={scrollToTable}
+          refreshing={loading}
+        />
 
-        {/* Tarjetas de Estadísticas */}
-        <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <StatCard
-            title="Total de incidentes"
-            value={totalCount}
-            subtitle="Filtro activo actual"
-            icon={<AlertTriangle className="h-5 w-5 text-amber-200/80" strokeWidth={1.75} />}
-          />
-          <StatCard
-            title="Severidad alta"
-            value={highSeverityCount}
-            subtitle="Prioridad de atención"
-            icon={<AlertTriangle className="h-5 w-5 text-red-300/90" strokeWidth={1.75} />}
-          />
-          <StatCard
-            title="Pendientes de revisión"
-            value={pendingCount}
-            subtitle="En los resultados mostrados"
-            icon={<Clock className="h-5 w-5 text-amber-200/80" strokeWidth={1.75} />}
-          />
-        </div>
-
-        {/* Barra de Filtros */}
-        <div className={`mb-6 p-5 ${GLASS_CARD}`}>
-          <div className="mb-4 flex items-center gap-2 text-[0.6875rem] font-semibold uppercase tracking-[0.12em] text-white/55">
-            <Filter className="h-3.5 w-3.5 text-amber-200/80" strokeWidth={1.75} />
-            <span>Filtrar incidentes</span>
-          </div>
-
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <main className="relative mt-7 sm:mt-9">
+          {/* Encabezado */}
+          <div className="reveal mb-6 flex flex-col justify-between gap-4 sm:mb-8 sm:flex-row sm:items-end">
             <div>
-              <label className={labelClass}>Conductor</label>
-              <select
-                value={selectedDriver}
-                onChange={handleFilterChange(setSelectedDriver, selectedDriver)}
-                className={selectClass}
-              >
-                <option value="">Todos los conductores</option>
-                {drivers.map((d) => (
-                  <option key={d.id} value={d.id}>
-                    {d.nombre_completo}
-                    {d.numero_licencia ? ` (${d.numero_licencia})` : ""}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className={labelClass}>Tipo de Incidente</label>
-              <select
-                value={selectedType}
-                onChange={handleFilterChange(setSelectedType, selectedType)}
-                className={selectClass}
-              >
-                <option value="">Todos los tipos</option>
-                {types.map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {t.nombre}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className={labelClass}>Severidad</label>
-              <select
-                value={selectedSeverity}
-                onChange={handleFilterChange(setSelectedSeverity, selectedSeverity)}
-                className={selectClass}
-              >
-                <option value="">Todas las severidades</option>
-                <option value="alta">Alta</option>
-                <option value="media">Media</option>
-                <option value="baja">Baja</option>
-              </select>
-            </div>
-
-            <div>
-              <label className={labelClass}>Estado de Revisión</label>
-              <select
-                value={selectedReviewed}
-                onChange={handleFilterChange(setSelectedReviewed, selectedReviewed)}
-                className={selectClass}
-              >
-                <option value="">Todos los estados</option>
-                <option value="false">Pendiente</option>
-                <option value="true">Revisado</option>
-              </select>
-            </div>
-          </div>
-        </div>
-
-        {/* Tabla de Resultados */}
-        <section className={`overflow-hidden ${GLASS_CARD}`}>
-          <div className="flex items-center justify-between border-b border-white/10 px-6 py-4">
-            <h3 className="text-[0.9375rem] font-semibold tracking-[-0.01em] text-white/95">
-              Listado de Incidentes
-            </h3>
-            <span className="text-xs font-normal text-white/50">
-              Mostrando {events.length} resultados
-            </span>
-          </div>
-
-          {error ? (
-            <div className="flex flex-col items-center justify-center gap-2 p-12 text-center">
-              <AlertTriangle className="h-8 w-8 text-red-300" strokeWidth={1.75} />
-              <p className="text-sm font-medium text-red-200">{error}</p>
-              <p className="text-xs text-white/50">
-                Verifica que la API esté en marcha y vuelve a intentarlo.
+              <h1 className="text-[2rem] font-semibold leading-[1.08] tracking-[-0.035em] text-ink sm:text-[2.35rem]">
+                Panel de Incidentes
+              </h1>
+              <p className="mt-2 max-w-xl text-[12.5px] font-normal leading-relaxed text-ink-muted sm:text-[13px]">
+                Monitoreo y revisión de eventos de fatiga registrados en tiempo real
               </p>
             </div>
-          ) : loading ? (
-            <div className="flex items-center justify-center p-12 text-sm text-white/60">
-              <RefreshCw className="mr-2 h-4 w-4 animate-spin text-amber-200/80" strokeWidth={1.75} />
-              Cargando incidentes...
+            <div className="hidden items-center gap-2 sm:flex">
+              <span className="glass-chip">
+                <span className="h-1.5 w-1.5 rounded-full bg-drive-teal shadow-[0_0_0_3px_rgba(15,144,119,0.13)]" />
+                Supervisión
+              </span>
             </div>
-          ) : events.length === 0 ? (
-            <div className="p-12 text-center text-sm text-white/60">
-              No se encontraron incidentes con los filtros seleccionados.
+          </div>
+
+          {/* Tarjetas de Estadísticas */}
+          <div className="reveal reveal-delay-1 mb-5 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-12">
+            <StatCard
+              variant="hero"
+              className="md:col-span-2 xl:col-span-5"
+              title="Total de incidentes"
+              value={totalCount}
+              subtitle="Filtro activo actual"
+              accent="amber"
+              icon={<ShieldAlert className="h-[18px] w-[18px]" strokeWidth={1.8} />}
+              actions={
+                <>
+                  <button
+                    type="button"
+                    onClick={handleManualRefresh}
+                    disabled={loading}
+                    className="btn btn-dark"
+                  >
+                    <RefreshCw
+                      className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`}
+                      strokeWidth={1.9}
+                    />
+                    <span>Actualizar</span>
+                  </button>
+                  <button type="button" onClick={scrollToFilters} className="btn btn-glass">
+                    <SlidersHorizontal className="h-3.5 w-3.5" strokeWidth={1.9} />
+                    <span>Filtrar</span>
+                  </button>
+                </>
+              }
+            />
+            <StatCard
+              variant="light"
+              className="xl:col-span-3"
+              title="Severidad alta"
+              value={highSeverityCount}
+              subtitle="Prioridad de atención"
+              accent="rose"
+              icon={<AlertTriangle className="h-[18px] w-[18px]" strokeWidth={1.8} />}
+            />
+            <StatCard
+              variant="teal"
+              className="md:col-span-2 xl:col-span-4"
+              title="Pendientes de revisión"
+              value={pendingCount}
+              subtitle="En los resultados mostrados"
+              icon={<Clock className="h-[18px] w-[18px]" strokeWidth={1.8} />}
+            />
+          </div>
+
+          {/* Barra de Filtros */}
+          <section id="filtros" className="glass-panel reveal reveal-delay-2 mb-5 p-5 sm:p-6">
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <span className="icon-chip">
+                  <SlidersHorizontal className="h-4 w-4" strokeWidth={1.8} />
+                </span>
+                <h2 className="text-[14px] font-semibold tracking-[-0.015em] text-ink">
+                  Filtrar incidentes
+                </h2>
+              </div>
             </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm text-white/80">
-                <thead className="border-b border-white/10 bg-white/[0.04] text-[0.6875rem] font-semibold uppercase tracking-[0.12em] text-white/50">
-                  <tr>
-                    <th className="px-6 py-3.5 font-semibold">Fecha y Hora</th>
-                    <th className="px-6 py-3.5 font-semibold">Conductor / Placa</th>
-                    <th className="px-6 py-3.5 font-semibold">Tipo de Incidente</th>
-                    <th className="px-6 py-3.5 font-semibold">Duración</th>
-                    <th className="px-6 py-3.5 font-semibold">Severidad</th>
-                    <th className="px-6 py-3.5 font-semibold">Estado</th>
-                    <th className="px-6 py-3.5 text-right font-semibold">Acción</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-white/[0.06]">
+
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+              <div>
+                <label className="filter-label">
+                  <User className="h-3 w-3" strokeWidth={2} />
+                  Conductor
+                </label>
+                <select
+                  value={selectedDriver}
+                  onChange={handleFilterChange(setSelectedDriver, selectedDriver)}
+                  className="select-glass"
+                >
+                  <option value="">Todos los conductores</option>
+                  {drivers.map((d) => (
+                    <option key={d.id} value={d.id}>
+                      {d.nombre_completo}
+                      {d.numero_licencia ? ` (${d.numero_licencia})` : ""}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="filter-label">
+                  <Tag className="h-3 w-3" strokeWidth={2} />
+                  Tipo de Incidente
+                </label>
+                <select
+                  value={selectedType}
+                  onChange={handleFilterChange(setSelectedType, selectedType)}
+                  className="select-glass"
+                >
+                  <option value="">Todos los tipos</option>
+                  {types.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.nombre}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="filter-label">
+                  <AlertTriangle className="h-3 w-3" strokeWidth={2} />
+                  Severidad
+                </label>
+                <select
+                  value={selectedSeverity}
+                  onChange={handleFilterChange(setSelectedSeverity, selectedSeverity)}
+                  className="select-glass"
+                >
+                  <option value="">Todas las severidades</option>
+                  <option value="alta">Alta</option>
+                  <option value="media">Media</option>
+                  <option value="baja">Baja</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="filter-label">
+                  <CheckCircle2 className="h-3 w-3" strokeWidth={2} />
+                  Estado de Revisión
+                </label>
+                <select
+                  value={selectedReviewed}
+                  onChange={handleFilterChange(setSelectedReviewed, selectedReviewed)}
+                  className="select-glass"
+                >
+                  <option value="">Todos los estados</option>
+                  <option value="false">Pendiente</option>
+                  <option value="true">Revisado</option>
+                </select>
+              </div>
+            </div>
+          </section>
+
+          {/* Tabla de Resultados */}
+          <section id="incidentes" className="glass-panel reveal reveal-delay-3 overflow-hidden p-4 sm:p-5">
+            <div className="mb-2 flex flex-wrap items-center justify-between gap-3 px-1.5 pt-1">
+              <div className="flex items-center gap-3">
+                <span className="icon-chip">
+                  <ListFilter className="h-4 w-4" strokeWidth={1.8} />
+                </span>
+                <h3 className="text-[14px] font-semibold tracking-[-0.015em] text-ink">
+                  Listado de Incidentes
+                </h3>
+              </div>
+              <span className="glass-chip">
+                <span className="h-1.5 w-1.5 rounded-full bg-drive-teal" />
+                Mostrando {events.length} resultados
+              </span>
+            </div>
+
+            {error ? (
+              <div className="flex flex-col items-center justify-center gap-3 px-6 py-14 text-center">
+                <span className="icon-chip h-11 w-11 text-[#a85448]">
+                  <AlertTriangle className="h-5 w-5" strokeWidth={1.8} />
+                </span>
+                <p className="text-sm font-semibold text-[#8f4439]">{error}</p>
+                <p className="max-w-sm text-[11.5px] text-ink-muted">
+                  Verifica que la API esté en marcha y vuelve a intentarlo.
+                </p>
+              </div>
+            ) : loading ? (
+              <div className="space-y-2 px-0.5 pb-1 pt-2">
+                {[0, 1, 2, 3, 4].map((row) => (
+                  <div
+                    key={row}
+                    className="skeleton h-[52px] w-full"
+                    style={{ opacity: 1 - row * 0.12 }}
+                  />
+                ))}
+              </div>
+            ) : events.length === 0 ? (
+              <div className="flex flex-col items-center justify-center gap-3 px-6 py-14 text-center">
+                <span className="icon-chip h-11 w-11">
+                  <ListFilter className="h-5 w-5" strokeWidth={1.8} />
+                </span>
+                <p className="text-sm font-medium text-ink-soft">
+                  No se encontraron incidentes con los filtros seleccionados.
+                </p>
+              </div>
+            ) : (
+              <>
+                <div className="hidden overflow-x-auto pb-1 md:block">
+                  <table className="data-table">
+                    <thead>
+                      <tr>
+                        <th>Fecha y Hora</th>
+                        <th>Conductor / Placa</th>
+                        <th>Tipo de Incidente</th>
+                        <th>Duración</th>
+                        <th>Severidad</th>
+                        <th>Estado</th>
+                        <th className="text-right">Acción</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {events.map((e) => (
+                        <tr key={e.id}>
+                          <td className="whitespace-nowrap text-[11px] font-medium tabular-nums text-ink-soft">
+                            {formatearFecha(e.fecha_hora, {
+                              dateStyle: "short",
+                              timeStyle: "medium",
+                            })}
+                          </td>
+                          <td>
+                            <div className="flex items-center gap-2.5">
+                              <span className="row-avatar">{getInitials(e.conductor_nombre)}</span>
+                              <div className="min-w-0">
+                                <div className="max-w-[170px] truncate font-semibold text-ink">
+                                  {e.conductor_nombre}
+                                </div>
+                                <div className="mt-0.5 text-[10.5px] font-normal text-ink-muted">
+                                  Vehículo: {e.vehiculo_placa}
+                                </div>
+                              </div>
+                            </div>
+                          </td>
+                          <td>
+                            <div className="flex items-center gap-2.5">
+                              <span className="type-mark">
+                                <Activity
+                                  className={`h-3 w-3 ${severityIcon[e.severidad] ?? "text-ink-muted"}`}
+                                  strokeWidth={2}
+                                />
+                              </span>
+                              <span className="max-w-[190px] truncate font-medium text-ink-soft">
+                                {e.tipo_incidente_etiqueta || e.tipo_incidente_nombre}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="whitespace-nowrap text-[11px] tabular-nums text-ink-muted">
+                            {e.duracion_segundos}s
+                          </td>
+                          <td className="whitespace-nowrap">
+                            <span className={severityBadge[e.severidad] ?? "badge badge-neutral"}>
+                              {e.severidad}
+                            </span>
+                          </td>
+                          <td className="whitespace-nowrap">
+                            {e.revisado ? (
+                              <span className="status">
+                                <span className="status-dot status-dot--done" />
+                                Revisado
+                              </span>
+                            ) : (
+                              <span className="status">
+                                <span className="status-dot status-dot--pending" />
+                                Pendiente
+                              </span>
+                            )}
+                          </td>
+                          <td className="whitespace-nowrap text-right">
+                            <Link
+                              to={`/incidentes/${e.id}`}
+                              className="inline-flex items-center gap-1.5 rounded-full border border-white/60 bg-white/35 px-3 py-1.5 text-[10.5px] font-semibold text-ink shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] backdrop-blur-md transition hover:bg-white/55"
+                            >
+                              <Eye className="h-3 w-3" strokeWidth={1.9} />
+                              <span>Ver detalle</span>
+                            </Link>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                <div className="space-y-2.5 md:hidden">
                   {events.map((e) => (
-                    <tr key={e.id} className="transition hover:bg-white/[0.06]">
-                      <td className="whitespace-nowrap px-6 py-4 text-xs font-normal tabular-nums text-white/75">
-                        {formatearFecha(e.fecha_hora, {
-                          dateStyle: "short",
-                          timeStyle: "medium",
-                        })}
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="font-medium text-white">{e.conductor_nombre}</div>
-                        <div className="text-xs font-normal text-white/50">Vehículo: {e.vehiculo_placa}</div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className="font-medium text-white/90">
-                          {e.tipo_incidente_etiqueta || e.tipo_incidente_nombre}
-                        </span>
-                      </td>
-                      <td className="whitespace-nowrap px-6 py-4 text-xs tabular-nums text-white/60">
-                        {e.duracion_segundos}s
-                      </td>
-                      <td className="whitespace-nowrap px-6 py-4">
-                        <span
-                          className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[0.6875rem] font-semibold uppercase tracking-wide ${
-                            severityBadge[e.severidad] ?? "border-white/15 bg-white/10 text-white/60"
-                          }`}
-                        >
+                    <article key={e.id} className="data-card">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex min-w-0 items-center gap-2.5">
+                          <span className="row-avatar">{getInitials(e.conductor_nombre)}</span>
+                          <div className="min-w-0">
+                            <p className="truncate text-[12px] font-semibold text-ink">
+                              {e.conductor_nombre}
+                            </p>
+                            <p className="mt-0.5 text-[10.5px] text-ink-muted">
+                              Vehículo: {e.vehiculo_placa}
+                            </p>
+                          </div>
+                        </div>
+                        <span className={severityBadge[e.severidad] ?? "badge badge-neutral"}>
                           {e.severidad}
                         </span>
-                      </td>
-                      <td className="whitespace-nowrap px-6 py-4">
+                      </div>
+
+                      <div className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1.5 text-[11px] text-ink-soft">
+                        <span className="inline-flex items-center gap-1.5">
+                          <Activity
+                            className={`h-3 w-3 ${severityIcon[e.severidad] ?? "text-ink-muted"}`}
+                            strokeWidth={2}
+                          />
+                          {e.tipo_incidente_etiqueta || e.tipo_incidente_nombre}
+                        </span>
+                        <span className="h-1 w-1 rounded-full bg-ink-muted/40" />
+                        <span className="tabular-nums text-ink-muted">{e.duracion_segundos}s</span>
+                        <span className="h-1 w-1 rounded-full bg-ink-muted/40" />
                         {e.revisado ? (
-                          <span className="inline-flex items-center gap-1 rounded-full border border-emerald-400/30 bg-emerald-500/15 px-2.5 py-0.5 text-[0.6875rem] font-medium text-emerald-200">
-                            <CheckCircle2 className="h-3 w-3" strokeWidth={2} />
+                          <span className="status">
+                            <span className="status-dot status-dot--done" />
                             Revisado
                           </span>
                         ) : (
-                          <span className="inline-flex items-center gap-1 rounded-full border border-amber-400/30 bg-amber-500/15 px-2.5 py-0.5 text-[0.6875rem] font-medium text-amber-200">
-                            <Clock className="h-3 w-3" strokeWidth={2} />
+                          <span className="status">
+                            <span className="status-dot status-dot--pending" />
                             Pendiente
                           </span>
                         )}
-                      </td>
-                      <td className="whitespace-nowrap px-6 py-4 text-right">
+                      </div>
+
+                      <div className="mt-3 flex items-center justify-between gap-2 border-t border-white/40 pt-3">
+                        <span className="text-[10.5px] font-medium tabular-nums text-ink-muted">
+                          {formatearFecha(e.fecha_hora, {
+                            dateStyle: "short",
+                            timeStyle: "short",
+                          })}
+                        </span>
                         <Link
                           to={`/incidentes/${e.id}`}
-                          className="inline-flex items-center gap-1.5 rounded-xl border border-white/15 bg-white/10 px-3 py-1.5 text-xs font-medium text-amber-100 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.2)] transition hover:bg-white/20 hover:text-white"
+                          className="inline-flex items-center gap-1.5 rounded-full border border-white/60 bg-white/35 px-3 py-1.5 text-[10.5px] font-semibold text-ink shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] backdrop-blur-md transition hover:bg-white/55"
                         >
-                          <Eye className="h-3.5 w-3.5 text-amber-200/80" strokeWidth={1.75} />
+                          <Eye className="h-3 w-3" strokeWidth={1.9} />
                           <span>Ver detalle</span>
                         </Link>
-                      </td>
-                    </tr>
+                      </div>
+                    </article>
                   ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </section>
-      </main>
+                </div>
+              </>
+            )}
+          </section>
+        </main>
+      </div>
     </div>
   );
 }

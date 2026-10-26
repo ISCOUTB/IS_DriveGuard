@@ -5,7 +5,6 @@ import {
   ArrowLeft,
   Calendar,
   Car,
-  CheckCircle2,
   Clock,
   Gauge,
   MessageSquare,
@@ -14,6 +13,7 @@ import {
 } from "lucide-react";
 import AmbientBackground from "../components/AmbientBackground";
 import Navbar from "../components/Navbar";
+import SideRail from "../components/SideRail";
 import {
   formatearFecha,
   getCurrentUser,
@@ -21,16 +21,13 @@ import {
   updateEvento,
 } from "../services/api";
 
-const GLASS_CARD =
-  "rounded-3xl border border-white/15 bg-white/[0.07] shadow-[0_8px_40px_0_rgba(0,0,0,0.35),inset_0_1px_1px_0_rgba(255,255,255,0.25)] backdrop-blur-3xl";
-
 const labelClass =
-  "text-[0.6875rem] font-semibold uppercase tracking-[0.12em] text-white/55";
+  "text-[9.5px] font-semibold uppercase tracking-[0.13em] text-ink-muted";
 
 const severityBadge = {
-  alta: "bg-red-500/15 text-red-200 border-red-400/30",
-  media: "bg-amber-500/15 text-amber-200 border-amber-400/30",
-  baja: "bg-emerald-500/15 text-emerald-200 border-emerald-400/30",
+  alta: "badge badge-alta",
+  media: "badge badge-media",
+  baja: "badge badge-baja",
 };
 
 export default function IncidentDetailPage() {
@@ -77,163 +74,212 @@ export default function IncidentDetailPage() {
   };
 
   return (
-    <div className="relative min-h-screen overflow-hidden text-white">
+    <div className="relative min-h-screen text-ink">
       <AmbientBackground />
-      <Navbar />
 
-      <main className="relative mx-auto max-w-5xl px-4 py-10 sm:px-6 lg:px-8">
-        <Link
-          to="/dashboard"
-          className="mb-6 inline-flex items-center gap-2 text-xs font-medium text-white/60 transition hover:text-amber-100"
-        >
-          <ArrowLeft className="h-4 w-4" strokeWidth={1.75} />
-          <span>Volver al panel de incidentes</span>
-        </Link>
+      <div className="relative z-10 mx-auto w-full max-w-[1500px] px-4 pb-10 pt-4 sm:px-6 lg:pl-[104px] lg:pr-8">
+        <Navbar />
+        <SideRail active="detail" />
 
-        {loading ? (
-          <div className={`p-12 text-center text-sm text-white/60 ${GLASS_CARD}`}>
-            Cargando detalle del incidente...
-          </div>
-        ) : error ? (
-          <div className="rounded-3xl border border-red-400/30 bg-red-500/10 p-8 text-center text-red-200 backdrop-blur-3xl">
-            <AlertTriangle className="mx-auto mb-2 h-8 w-8 text-red-300" strokeWidth={1.75} />
-            <p className="font-medium">{error}</p>
-          </div>
-        ) : event ? (
-          <div className="space-y-6">
-            {/* Encabezado del Incidente */}
-            <div className={`p-6 ${GLASS_CARD}`}>
-              <div className="flex flex-col justify-between gap-5 md:flex-row md:items-center">
-                <div>
-                  <div className="flex flex-wrap items-center gap-3">
-                    <h1 className="text-[1.75rem] font-semibold tracking-[-0.02em] text-white">
-                      {event.tipo_incidente_etiqueta || event.tipo_incidente_nombre}
-                    </h1>
-                    <span
-                      className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[0.6875rem] font-semibold uppercase tracking-wide ${
-                        severityBadge[event.severidad]
+        <main className="relative mx-auto mt-7 max-w-5xl sm:mt-9">
+          <Link
+            to="/dashboard"
+            className="glass-chip reveal mb-5 px-3.5 py-2 text-[11px] transition hover:bg-white/50"
+          >
+            <ArrowLeft className="h-3.5 w-3.5" strokeWidth={1.9} />
+            <span>Volver al panel de incidentes</span>
+          </Link>
+
+          {loading ? (
+            <div className="glass-panel p-12 text-center">
+              <div className="mx-auto mb-3 h-9 w-9 animate-spin rounded-full border-2 border-white/50 border-t-drive-teal" />
+              <p className="text-sm text-ink-muted">Cargando detalle del incidente...</p>
+            </div>
+          ) : error ? (
+            <div className="glass-panel flex flex-col items-center gap-3 p-10 text-center">
+              <span className="icon-chip h-11 w-11 text-[#a85448]">
+                <AlertTriangle className="h-5 w-5" strokeWidth={1.8} />
+              </span>
+              <p className="font-semibold text-[#8f4439]">{error}</p>
+            </div>
+          ) : event ? (
+            <div className="space-y-4">
+              {/* Encabezado del Incidente */}
+              <section className="glass-panel reveal relative overflow-hidden p-6 sm:p-7">
+                <ShieldCheck
+                  className="pointer-events-none absolute -bottom-14 -right-6 h-52 w-52 text-[#8d7862]/[0.08]"
+                  strokeWidth={0.7}
+                />
+                <span className="pointer-events-none absolute -right-20 -top-24 h-56 w-56 rounded-full border border-white/25" />
+
+                <div className="relative flex flex-col justify-between gap-6 md:flex-row md:items-center">
+                  <div>
+                    <div className="flex flex-wrap items-center gap-2.5">
+                      <h1 className="text-[1.75rem] font-semibold leading-tight tracking-[-0.035em] text-ink sm:text-[2rem]">
+                        {event.tipo_incidente_etiqueta || event.tipo_incidente_nombre}
+                      </h1>
+                      <span className={severityBadge[event.severidad] ?? "badge badge-neutral"}>
+                        Severidad {event.severidad}
+                      </span>
+                      {event.revisado ? (
+                        <span className="glass-chip">
+                          <span className="status-dot status-dot--done" />
+                          Revisado
+                        </span>
+                      ) : (
+                        <span className="glass-chip">
+                          <span className="status-dot status-dot--pending" />
+                          Pendiente de revisión
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-[11.5px] font-normal text-ink-muted">
+                      <span className="flex items-center gap-1.5">
+                        <Calendar className="h-3.5 w-3.5 text-ink-soft" strokeWidth={1.8} />
+                        Ocurrencia:{" "}
+                        <strong className="font-semibold text-ink-soft">
+                          {formatearFecha(event.fecha_hora)}
+                        </strong>
+                      </span>
+                      <span className="h-1 w-1 rounded-full bg-ink-muted/40" />
+                      <span>
+                        Sincronizado:{" "}
+                        <strong className="font-semibold text-ink-soft">
+                          {formatearFecha(event.fecha_recepcion)}
+                        </strong>
+                      </span>
+                    </div>
+                  </div>
+
+                  {puedeRevisar && (
+                    <button
+                      type="button"
+                      onClick={toggleReviewedStatus}
+                      disabled={updating}
+                      className={`btn ${event.revisado ? "btn-glass" : "btn-teal"} flex-none`}
+                    >
+                      <ShieldCheck className="h-4 w-4" strokeWidth={1.9} />
+                      <span>
+                        {updating
+                          ? "Guardando..."
+                          : event.revisado
+                            ? "Marcar como pendiente"
+                            : "Marcar como revisado"}
+                      </span>
+                    </button>
+                  )}
+                </div>
+              </section>
+
+              {/* Métricas Clave */}
+              <div className="reveal reveal-delay-1 grid grid-cols-1 gap-3.5 sm:grid-cols-2 xl:grid-cols-4">
+                {[
+                  { icon: Clock, label: "Duración", value: event.duracion_segundos, unit: "segundos", mono: false },
+                  { icon: Gauge, label: "Métrica calculada", value: event.valor_metrica, unit: null, mono: true, accent: true },
+                  { icon: User, label: "Conductor", value: event.conductor_nombre, unit: null, mono: false, small: true },
+                  { icon: Car, label: "Vehículo asignado", value: event.vehiculo_placa, unit: null, mono: false, small: true },
+                ].map(({ icon: Icon, label, value, unit, mono, small, accent }) => (
+                  <div
+                    key={label}
+                    className={
+                      accent
+                        ? "relative overflow-hidden rounded-[24px] border border-white/35 bg-gradient-to-br from-[#1aab8c] via-[#0d8b74] to-[#07705d] p-5 text-white shadow-[0_28px_55px_-30px_rgba(5,83,68,0.7),inset_0_1px_0_rgba(255,255,255,0.4)]"
+                        : "glass-soft p-5"
+                    }
+                  >
+                    {accent && (
+                      <span className="pointer-events-none absolute -right-10 -top-14 h-36 w-36 rounded-full border border-white/15" />
+                    )}
+                    <div className="relative flex items-center gap-2.5">
+                      <span
+                        className={
+                          accent
+                            ? "inline-grid h-8 w-8 place-items-center rounded-full border border-white/25 bg-white/15 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.3)]"
+                            : "icon-chip h-8 w-8"
+                        }
+                      >
+                        <Icon className="h-3.5 w-3.5" strokeWidth={1.8} />
+                      </span>
+                      <span className={accent ? "text-[9.5px] font-semibold uppercase tracking-[0.13em] text-white/70" : labelClass}>
+                        {label}
+                      </span>
+                    </div>
+                    <p
+                      className={`relative mt-3 font-semibold tracking-[-0.02em] ${
+                        accent ? "text-white" : "text-ink"
+                      } ${small ? "text-[17px]" : "text-[1.45rem]"} ${
+                        mono ? "font-mono" : "tabular-nums"
                       }`}
                     >
-                      Severidad {event.severidad}
-                    </span>
-                    {event.revisado ? (
-                      <span className="inline-flex items-center gap-1 rounded-full border border-emerald-400/30 bg-emerald-500/15 px-2.5 py-0.5 text-[0.6875rem] font-medium text-emerald-200">
-                        <CheckCircle2 className="h-3.5 w-3.5" strokeWidth={2} />
-                        Revisado
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1 rounded-full border border-amber-400/30 bg-amber-500/15 px-2.5 py-0.5 text-[0.6875rem] font-medium text-amber-200">
-                        <Clock className="h-3.5 w-3.5" strokeWidth={2} />
-                        Pendiente de revisión
-                      </span>
-                    )}
+                      {value}
+                      {unit && (
+                        <span className={`ml-1.5 text-[11px] font-normal ${accent ? "text-white/60" : "text-ink-muted"}`}>
+                          {unit}
+                        </span>
+                      )}
+                    </p>
                   </div>
-                  <div className="mt-3 flex flex-wrap items-center gap-4 text-xs font-normal text-white/55">
-                    <span className="flex items-center gap-1.5">
-                      <Calendar className="h-3.5 w-3.5 text-amber-200/70" strokeWidth={1.75} />
-                      Ocurrencia:{" "}
-                      <strong className="font-medium text-white/90">
-                        {formatearFecha(event.fecha_hora)}
-                      </strong>
-                    </span>
-                    <span className="text-white/25">•</span>
-                    <span>
-                      Sincronizado:{" "}
-                      <strong className="font-medium text-white/90">
-                        {formatearFecha(event.fecha_recepcion)}
-                      </strong>
-                    </span>
-                  </div>
-                </div>
-
-                {puedeRevisar && (
-                  <button
-                    type="button"
-                    onClick={toggleReviewedStatus}
-                    disabled={updating}
-                    className={`inline-flex items-center justify-center gap-2 rounded-xl border px-4 py-2.5 text-xs font-semibold shadow-[inset_0_1px_0_0_rgba(255,255,255,0.25)] transition disabled:opacity-50 ${
-                      event.revisado
-                        ? "border-white/15 bg-white/10 text-white/85 hover:bg-white/20"
-                        : "border-amber-300/50 bg-gradient-to-br from-amber-300/90 to-amber-500/90 text-slate-950 shadow-[0_4px_20px_0_rgba(245,158,11,0.4)] hover:from-amber-200 hover:to-amber-400"
-                    }`}
-                  >
-                    <ShieldCheck className="h-4 w-4" strokeWidth={1.75} />
-                    <span>
-                      {updating
-                        ? "Guardando..."
-                        : event.revisado
-                        ? "Marcar como pendiente"
-                        : "Marcar como revisado"}
-                    </span>
-                  </button>
-                )}
+                ))}
               </div>
-            </div>
 
-            {/* Métricas Clave */}
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              {[
-                { icon: Clock, label: "Duración", value: event.duracion_segundos, unit: "segundos", mono: false },
-                { icon: Gauge, label: "Métrica calculada", value: event.valor_metrica, unit: null, mono: true },
-                { icon: User, label: "Conductor", value: event.conductor_nombre, unit: null, mono: false, small: true },
-                { icon: Car, label: "Vehículo asignado", value: event.vehiculo_placa, unit: null, mono: false, small: true },
-              ].map(({ icon: Icon, label, value, unit, mono, small }) => (
-                <div
-                  key={label}
-                  className="rounded-3xl border border-white/15 bg-gradient-to-br from-white/15 via-white/5 to-white/[0.02] p-5 shadow-[0_8px_40px_0_rgba(0,0,0,0.35),inset_0_1px_1px_0_rgba(255,255,255,0.25)] backdrop-blur-3xl"
-                >
-                  <div className="flex items-center gap-2">
-                    <div className="rounded-lg border border-white/20 bg-white/10 p-1.5 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.3)]">
-                      <Icon className="h-3.5 w-3.5 text-amber-200/85" strokeWidth={1.75} />
-                    </div>
-                    <span className={labelClass}>{label}</span>
-                  </div>
-                  <p
-                    className={`mt-3 font-semibold tracking-[-0.01em] text-white ${
-                      small ? "text-lg" : "text-2xl"
-                    } ${mono ? "font-mono" : ""} ${mono ? "" : "tabular-nums"}`}
-                  >
-                    {value}
-                    {unit && <span className="ml-1.5 text-sm font-normal text-white/50">{unit}</span>}
+              {/* Comentario del Conductor */}
+              <section className="glass-panel reveal reveal-delay-2 p-6">
+                <h3 className="mb-3.5 flex items-center gap-2.5 text-[14px] font-semibold tracking-[-0.015em] text-ink">
+                  <span className="icon-chip h-8 w-8">
+                    <MessageSquare className="h-3.5 w-3.5" strokeWidth={1.8} />
+                  </span>
+                  <span>Comentario registrado por el conductor</span>
+                </h3>
+                {event.comentario_conductor ? (
+                  <blockquote className="glass-soft relative p-4 text-[12.5px] font-normal italic leading-relaxed text-ink-soft">
+                    <span className="pointer-events-none absolute left-3 top-1 select-none font-serif text-3xl leading-none text-ink/10">
+                      “
+                    </span>
+                    <span className="relative pl-4">{event.comentario_conductor}</span>
+                  </blockquote>
+                ) : (
+                  <p className="text-[11.5px] font-normal italic text-ink-muted">
+                    El conductor no registró ningún comentario para este evento.
                   </p>
-                </div>
-              ))}
-            </div>
+                )}
+              </section>
 
-            {/* Comentario del Conductor */}
-            <div className={`p-6 ${GLASS_CARD}`}>
-              <h3 className="mb-3 flex items-center gap-2 text-[0.9375rem] font-semibold tracking-[-0.01em] text-white/95">
-                <MessageSquare className="h-4 w-4 text-amber-200/80" strokeWidth={1.75} />
-                <span>Comentario registrado por el conductor</span>
-              </h3>
-              {event.comentario_conductor ? (
-                <div className="rounded-2xl border border-white/10 bg-white/[0.05] p-4 text-sm font-normal italic text-white/80 shadow-inner">
-                  "{event.comentario_conductor}"
-                </div>
-              ) : (
-                <p className="text-xs font-normal italic text-white/45">
-                  El conductor no registró ningún comentario para este evento.
-                </p>
-              )}
-            </div>
+              {/* Trazabilidad y Nota de Privacidad */}
+              <section className="glass-panel reveal reveal-delay-3 p-6">
+                <h4 className={labelClass}>Metadatos de trazabilidad</h4>
+                <ul className="mt-3 grid gap-2 font-mono text-[11px] text-ink-muted sm:grid-cols-3">
+                  <li className="glass-soft px-3.5 py-2.5">
+                    <span className="block text-[9px] font-semibold uppercase tracking-[0.1em] text-ink-muted/75">
+                      ID del Evento
+                    </span>
+                    {event.id}
+                  </li>
+                  <li className="glass-soft px-3.5 py-2.5">
+                    <span className="block text-[9px] font-semibold uppercase tracking-[0.1em] text-ink-muted/75">
+                      ID de Sesión
+                    </span>
+                    {event.sesion_id}
+                  </li>
+                  <li className="glass-soft px-3.5 py-2.5">
+                    <span className="block text-[9px] font-semibold uppercase tracking-[0.1em] text-ink-muted/75">
+                      ID Tipo Incidente
+                    </span>
+                    {event.tipo_incidente_id}
+                  </li>
+                </ul>
 
-            {/* Trazabilidad y Nota de Privacidad */}
-            <div className={`p-6 text-xs font-normal text-white/60 ${GLASS_CARD}`}>
-              <h4 className="mb-3 text-[0.6875rem] font-semibold uppercase tracking-[0.12em] text-white/55">
-                Metadatos de trazabilidad
-              </h4>
-              <ul className="space-y-1.5 font-mono text-white/50">
-                <li><span className="text-white/70">ID del Evento:</span> {event.id}</li>
-                <li><span className="text-white/70">ID de Sesión:</span> {event.sesion_id}</li>
-                <li><span className="text-white/70">ID Tipo Incidente:</span> {event.tipo_incidente_id}</li>
-              </ul>
-              <div className="mt-4 rounded-2xl border border-white/10 bg-white/[0.05] p-4 text-white/65">
-                <strong className="font-semibold text-white/85">Nota de Protección de Datos:</strong> Conforme a la Ley 1581 de 2012, este sistema registra únicamente metadatos métricos y temporales. No se almacenan ni transmiten imágenes o grabaciones de video del conductor.
-              </div>
+                <div className="mt-3.5 rounded-2xl border border-white/45 bg-white/20 p-4 text-[11.5px] font-normal leading-relaxed text-ink-soft backdrop-blur-md">
+                  <strong className="font-semibold text-ink">Nota de Protección de Datos:</strong>{" "}
+                  Conforme a la Ley 1581 de 2012, este sistema registra únicamente metadatos métricos y
+                  temporales. No se almacenan ni transmiten imágenes o grabaciones de video del
+                  conductor.
+                </div>
+              </section>
             </div>
-          </div>
-        ) : null}
-      </main>
+          ) : null}
+        </main>
+      </div>
     </div>
   );
 }
