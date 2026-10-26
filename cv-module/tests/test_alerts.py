@@ -81,3 +81,14 @@ def test_switch_warning_to_fatigue_does_not_interrupt_audio(monkeypatch):
     alerts._callback(second, len(second), None, None)
     assert np.max(np.abs(second)) > .3
     alerts.close()
+
+
+def test_close_window_button_exits_instead_of_reopening(monkeypatch):
+    import cv2
+    import numpy as np
+    monkeypatch.setattr(cv2, 'imshow', lambda *args: None)
+    monkeypatch.setattr(cv2, 'waitKey', lambda *args: -1)
+    monkeypatch.setattr(cv2, 'getWindowProperty', lambda *args: 0)
+    alerts = Alerts(Config(), silent=True)
+    frame = np.zeros((480, 640, 3), dtype='uint8')
+    assert alerts.draw(frame, Risk(0, 'baja', (), ()), True) is False

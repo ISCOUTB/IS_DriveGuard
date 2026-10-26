@@ -82,7 +82,11 @@ class Alerts:
         cv2.imshow('DriveGuard - q para salir', frame)
         key = cv2.waitKey(1) & 0xFF
         self.calibrate_requested = key in (ord('c'), ord('C'))
-        return key not in (ord('q'), ord('Q'))
+        try:
+            visible = cv2.getWindowProperty('DriveGuard - q para salir', cv2.WND_PROP_VISIBLE) >= 1
+        except cv2.error:
+            visible = False
+        return visible and key not in (ord('q'), ord('Q'))
 
     def close(self):
         if self.stream:
