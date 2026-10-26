@@ -58,7 +58,7 @@ def test_no_face_gaps_and_nonfinite_reset():
     assert d.update(Metrics(0.1, 0.2), 5.2).score == 0
 
 
-@pytest.mark.parametrize('angles', [(0, 0, 0), (25, 0, 0), (0, 35, 0), (0, 0, 30)])
+@pytest.mark.parametrize('angles', [(0, 0, 0), (25, 0, 0), (0, 35, 0), (0, 0, 30), (-25, 0, 0), (0, -35, 0), (0, 0, -30)])
 def test_pose_known_projection(angles):
     import cv2
     x, y, z = np.radians(angles)

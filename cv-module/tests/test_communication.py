@@ -20,13 +20,13 @@ def test_durable_queue_deduplicates(tmp_path):
     assert path.stat().st_mode & 0o777 == 0o600
 
 
-def test_real_backend_offline_reconnect_lost_ack(client, admin_headers, sesion_y_tipo, tmp_path, monkeypatch):
-    session, kind = sesion_y_tipo
-    config = Config(session_id=str(session.id), eye_type_id=str(kind.id))
+def test_real_backend_offline_reconnect_lost_ack(client, admin, auth, sesion, tipo, tmp_path, monkeypatch):
+    session, kind = sesion, tipo
+    config = Config(session_id=session['id'], eye_type_id=str(kind.id))
     event = payload(config)
     outbox = Outbox(tmp_path / 'queue.sqlite3')
     outbox.enqueue(event)
-    monkeypatch.setenv('DG_TOKEN', admin_headers['Authorization'].split()[1])
+    monkeypatch.setenv('DG_TOKEN', auth(admin)['Authorization'].split()[1])
     state = {'online': False, 'lose_ack': True}
     statuses = []
 
@@ -52,17 +52,17 @@ def test_real_backend_offline_reconnect_lost_ack(client, admin_headers, sesion_y
     assert synchronize(restarted, api) == 1
     assert restarted.count() == 0
     assert statuses == [201, 200]
-    response = client.get('/events', headers=admin_headers)
+    response = client.get('/eventos', headers=auth(admin))
     assert len(response.json()) == 1
     assert response.json()[0]['id'] == event['id']
 
 
-def test_login_exact_contract_and_expired_token(client, admin_usuario, sesion_y_tipo, tmp_path, monkeypatch):
-    session, kind = sesion_y_tipo
-    config = Config(session_id=str(session.id), eye_type_id=str(kind.id))
+def test_login_exact_contract_and_expired_token(client, admin, sesion, tipo, tmp_path, monkeypatch):
+    session, kind = sesion, tipo
+    config = Config(session_id=session['id'], eye_type_id=str(kind.id))
     monkeypatch.setenv('DG_TOKEN', 'expired')
-    monkeypatch.setenv('DG_EMAIL', 'admin@test.com')
-    monkeypatch.setenv('DG_PASSWORD', 'ClaveSegura123')
+    monkeypatch.setenv('DG_EMAIL', admin.correo)
+    monkeypatch.setenv('DG_PASSWORD', 'ClaveSegura1')
     calls = []
 
     def transport(path, data, token):
@@ -73,7 +73,7 @@ def test_login_exact_contract_and_expired_token(client, admin_usuario, sesion_y_
     outbox = Outbox(tmp_path / 'queue.sqlite3')
     outbox.enqueue(payload(config))
     assert synchronize(outbox, API(config, transport)) == 1
-    assert calls == [('/events', 401), ('/auth/login', 200), ('/events', 201)]
+    assert calls == [('/eventos', 401), ('/auth/login', 200), ('/eventos', 201)]
 
 
 @pytest.mark.parametrize('status', [401, 404, 422, 500])
@@ -96,7 +96,7 @@ def test_wrong_ack_not_removed(tmp_path, monkeypatch):
     assert outbox.count() == 1
 
 
-def test_http_transport_real_backend(client, admin_usuario, sesion_y_tipo, tmp_path, monkeypatch):
+def test_http_transport_real_backend(client, admin, sesion, tipo, tmp_path, monkeypatch):
     """HTTP loopback real: urllib -> login/JWT -> router -> BD aislada."""
     import json
     import threading
@@ -115,15 +115,15 @@ def test_http_transport_real_backend(client, admin_usuario, sesion_y_tipo, tmp_p
             pass
 
     monkeypatch.delenv('DG_TOKEN', raising=False)
-    monkeypatch.setenv('DG_EMAIL', 'admin@test.com')
-    monkeypatch.setenv('DG_PASSWORD', 'ClaveSegura123')
+    monkeypatch.setenv('DG_EMAIL', admin.correo)
+    monkeypatch.setenv('DG_PASSWORD', 'ClaveSegura1')
     server = ThreadingHTTPServer(('127.0.0.1', 0), Handler)
     thread = threading.Thread(target=server.serve_forever, kwargs={'poll_interval': 0.05}, daemon=True)
     thread.start()
     try:
-        session, kind = sesion_y_tipo
+        session, kind = sesion, tipo
         config = Config(api_url=f'http://127.0.0.1:{server.server_port}',
-                        session_id=str(session.id), eye_type_id=str(kind.id))
+                        session_id=session['id'], eye_type_id=str(kind.id))
         outbox = Outbox(tmp_path / 'http.sqlite3')
         outbox.enqueue(payload(config))
         api = API(config)
