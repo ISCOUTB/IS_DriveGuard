@@ -20,3 +20,6 @@ build/
 .DS_Store
 .vscode/
 .idea/
+
+# Demostración local: SQLite, configuración y cola; nunca subirlos.
+.demo/

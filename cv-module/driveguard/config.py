@@ -28,6 +28,14 @@ class Config:
     tone_hz: int = 880
     tone_seconds: float = 0.20
     sample_rate: int = 44100
+    min_face_brightness: float = 45.0
+    max_face_brightness: float = 225.0
+    min_face_contrast: float = 25.0
+    min_eye_width: float = 12.0
+    max_eye_pitch: float = 40.0
+    max_eye_yaw: float = 40.0
+    coverage_seconds: float = 3.0
+    coverage_repeat_seconds: float = 5.0
     sync_seconds: float = 5.0
     request_timeout: float = 3.0
     sync_batch: int = 50
@@ -53,6 +61,8 @@ class Config:
         for name in ('detection_confidence', 'tracking_confidence'):
             if getattr(self, name) > 1:
                 raise ValueError(f'{name}: debe ser <= 1')
+        if not self.min_face_brightness < self.max_face_brightness <= 255:
+            raise ValueError('Rango de brillo debe cumplir 0 < min < max <= 255')
         if self.tone_hz >= self.sample_rate / 2:
             raise ValueError('tone_hz debe ser menor que Nyquist')
 

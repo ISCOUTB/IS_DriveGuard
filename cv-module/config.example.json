@@ -10,5 +10,13 @@
   "yaw_degrees": 30,
   "roll_degrees": 25,
   "head_seconds": 1.5,
-  "queue_path": "events.sqlite3"
+  "queue_path": "events.sqlite3",
+  "min_face_brightness": 45,
+  "max_face_brightness": 225,
+  "min_face_contrast": 25,
+  "min_eye_width": 12,
+  "max_eye_pitch": 40,
+  "max_eye_yaw": 40,
+  "coverage_seconds": 3,
+  "coverage_repeat_seconds": 5
 }

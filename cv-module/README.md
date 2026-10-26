@@ -74,10 +74,62 @@ respectivamente la alerta visual y sonora. En operación se necesitan ambas.
 Si no se puede abrir audio o cámara se informa un error y se termina.
 No detectar rostro muestra una indicación visual, sin atribuir fatiga.
 
+## Calibración y límites de captura
+
+En la ventana, mira al frente con ojos abiertos e iluminación suficiente y pulsa
+`C` para fijar la postura neutra. La referencia solo vive en RAM y se pierde al
+salir. No calibres con la cabeza inclinada: esa posición pasaría a ser la referencia.
+`P`, `Y`, `R` muestran pitch, yaw y roll relativos a esa referencia. EAR y MAR
+muestran las métricas de ojos y boca. La calibración no cambia sus umbrales.
+
+Se conserva la alarma por **postura sola**, incluso con ojos abiertos, tras el
+umbral temporal configurado. La pantalla indica `POSTURA`, `OJOS` o `BOSTEZO`;
+son señales geométricas, no una confirmación de que alguien duerme.
+
+`CAPTURA LIMITADA` indica poca/excesiva luz, poco contraste, rostro ausente o
+puntos/ojos no evaluables. Tras 3 segundos continuos emite dos tonos más graves;
+repite cada 5 segundos hasta recuperar captura evaluable. Este aviso no se envía
+como incidente de fatiga. Si solo los ojos no son evaluables y la pose sigue
+siendo calculable, la alarma por postura permanece activa. Una captura globalmente
+inválida reinicia los temporizadores de fatiga.
+
+El control de brillo/contraste se aplica al área del rostro cuando se localiza,
+para evitar que un fondo brillante oculte una cara oscura. Es una heurística:
+**no garantiza identificar todo contraluz ni certificar ojos visibles**. Una cámara
+RGB no resuelve oscuridad total. Ilumina la cara de frente y evita una fuente
+intensa detrás. Un EAR estimado tampoco prueba por sí solo el estado de alerta.
+
+Ajustes mediante JSON o variables `DG_*` (sin modificar código):
+
+| Opción | Valor inicial |
+|---|---:|
+| `min_face_brightness` / `max_face_brightness` | 45 / 225 (0–255) |
+| `min_face_contrast` | 25 (percentil 90 menos 10) |
+| `min_eye_width` | 12 píxeles por ojo |
+| `max_eye_pitch` / `max_eye_yaw` | 40° / 40° absolutos de pose sin calibrar |
+| `coverage_seconds` / `coverage_repeat_seconds` | 3 s / 5 s |
+
+## Integración local con dashboard
+
+El cliente envía a `POST /eventos`, igual que el dashboard consulta `GET /eventos`
+y `GET /eventos/resumen`. El login sigue siendo `POST /auth/login`.
+Arranca API/BD según `backend/README.md` y dashboard según `frontend/README.md`.
+Usa `/docs` de la API para crear usuario conductor, vehículo, sesión y catálogo
+(con un administrador autorizado); copia los UUID a un JSON local con `api_url`,
+`session_id`, `eye_type_id`, `yawn_type_id`, `head_type_id` y `queue_path`.
+Los tipos deben corresponder a somnolencia ocular, bostezo y cabeceo.
+
+Define `DG_TOKEN`, o `DG_EMAIL` y `DG_PASSWORD`, en el entorno. Arranca
+`python -m driveguard --config config.local.json` **sin** `--local-only` para
+sincronizar. El dashboard permite refrescar con **Actualizar**; puede tardar
+hasta `sync_seconds` (5 s) en recibir cada incidente. La cola de `--local-only`
+no contiene sesión/tipos y no se importa automáticamente a la API; usa una cola
+diferente para la sesión integrada. No guardes contraseñas ni tokens en JSON o Git.
+
 ## Entrega de eventos y privacidad
 
 El UUID se genera antes de persistir el evento en SQLite. Un hilo separado
-sincroniza `POST /events` con exactamente `id`, `sesion_id`, `tipo_incidente_id`,
+sincroniza `POST /eventos` con exactamente `id`, `sesion_id`, `tipo_incidente_id`,
 `fecha_hora` (UTC ISO-8601), `duracion_segundos`, `severidad`, `valor_metrica`.
 La duración es el tiempo sostenido al dispararse el umbral, no el tiempo total
 posterior del episodio; métrica EAR/MAR o máximo ángulo absoluto de cabeza.
@@ -126,6 +178,17 @@ frente a ella y ajustar el índice si hace falta.
 El audio real abrió su stream: primer callback con tono a 18.92 ms tras disparar;
 esto mide entrega a PortAudio, no audibilidad física. La simulación ejecuta 12 s
 de señales en tiempo virtual sin esperar esos 12 s: sus FPS no son rendimiento CV.
-Resultado final: **23 tests pasan**, con un aviso de deprecación de TestClient/httpx
+Resultado final: **24 tests pasan**, con un aviso de deprecación de TestClient/httpx
 procedente de dependencias del backend. Incluye HTTP loopback con urllib real.
 Pendiente para el computador local: probar la sesión con el rostro frente a la cámara integrada y calibrar umbrales. El rendimiento depende de la cámara y la iluminación.
+
+Verificación de integración del 26-10-2026: 33 pruebas del cliente CV y 50 del
+backend pasan con SQLite aislado; frontend compila y supera lint. Prueba manual
+local con BD de demostración: eventos de cámara y tres eventos sintéticos
+recibidos por `/eventos`, listados en dashboard, detalle y cambio de revisión.
+No equivale a prueba de PostgreSQL ni a certificación de detección en condiciones
+reales; validación física de los ajustes de luz/postura con el usuario pendiente.
+En la sesión integrada de cámara anterior al ajuste final de concurrencia de
+audio: 3219 frames, 14.85 FPS, media 67.32 ms/frame, p95 78.84 ms, máximo
+822.63 ms; cola de envío vacía al salir. No se declara cumplido el objetivo de
+15 FPS ni latencia máxima inferior a 200 ms.

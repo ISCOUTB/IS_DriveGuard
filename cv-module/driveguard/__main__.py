@@ -8,6 +8,7 @@ from dataclasses import replace
 
 from .config import load
 from .processing.risk import Detector, Metrics
+from .processing.quality import CoverageMonitor, PoseCalibration
 from .communication import API, Outbox, SyncWorker, event_payload
 
 
@@ -41,6 +42,8 @@ def main():
         config.validate_identity()
     from .alerts import Alerts
     detector = Detector(config)
+    coverage = CoverageMonitor(config)
+    calibration = PoseCalibration()
     outbox = Outbox(config.queue_path)
     worker = SyncWorker(outbox, API(config), config) if config.api_url and not testing and not local_only else None
     alerts = mesh = camera = None
@@ -77,11 +80,24 @@ def main():
             capture_end = time.perf_counter()
             if mesh:
                 metrics = mesh.process(frame)
+            raw_metrics = metrics
+            metrics = calibration.apply(metrics)
+            quality = mesh.quality if mesh and not args.benchmark else ''
             risk = detector.update(metrics, now)
+            if coverage.update(quality, now):
+                alerts.warn_capture()
             detected = time.perf_counter()
             if alerts.trigger(risk):
                 alert_times.append((time.perf_counter() - detected) * 1000)
-            keep_running = args.headless or alerts.draw(frame, risk, metrics is not None)
+            keep_running = args.headless or alerts.draw(frame, risk, metrics is not None, metrics, quality)
+            if not args.headless and alerts.calibrate_requested:
+                if raw_metrics is not None and not quality and raw_metrics.ear >= config.ear_threshold:
+                    calibration.set(raw_metrics)
+                    detector.reset()
+                    alerts.calibrated = True
+                    logging.info('Postura neutra calibrada; referencia solo en RAM')
+                else:
+                    logging.warning('Para calibrar: rostro frontal iluminado y ojos abiertos')
             # Ambas alertas preceden al disco; fallar explícitamente si no se puede persistir.
             for signal in risk.new:
                 outbox.enqueue(event_payload(config, signal, risk.severity, local_only=local_only))

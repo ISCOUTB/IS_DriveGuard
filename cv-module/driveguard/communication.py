@@ -97,10 +97,10 @@ class API:
     def send(self, event):
         if not self.token:
             self.login()
-        status, body = self.transport('/events', event, self.token)
+        status, body = self.transport('/eventos', event, self.token)
         if status == 401 and os.environ.get('DG_EMAIL') and os.environ.get('DG_PASSWORD'):
             self.login()
-            status, body = self.transport('/events', event, self.token)
+            status, body = self.transport('/eventos', event, self.token)
         if status not in (200, 201) or body.get('id') != event['id']:
             raise RuntimeError(f'Evento sin confirmar ({status}); permanece en cola')
 

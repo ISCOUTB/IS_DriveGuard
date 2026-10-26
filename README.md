@@ -4,6 +4,11 @@ Sistema de detección de fatiga y somnolencia en conducción mediante visión po
 
 Proyecto de Aula — Ingeniería de Software, Universidad Tecnológica de Bolívar.
 
+## Demo local para clase
+
+Desde la raíz: `.venv/bin/python scripts/demo.py`. Abre API y dashboard, sin
+activar cámara. Guía, cuenta ficticia y guion: [docs/DEMO_CLASE.md](docs/DEMO_CLASE.md).
+
 ## Contexto
 
 La fatiga al volante es un factor de riesgo vial que, a diferencia del alcohol o el exceso de velocidad, no deja evidencia física tras un siniestro y tiende a subregistrarse. Las soluciones comerciales existentes (sistemas DMS de fábrica, dispositivos de posventa) son costosas para flotas pequeñas, operan como cajas negras sin umbrales ajustables, y no ofrecen trazabilidad consultable para el supervisor.

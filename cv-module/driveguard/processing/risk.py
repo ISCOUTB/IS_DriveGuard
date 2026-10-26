@@ -9,6 +9,7 @@ class Metrics:
     pitch: float = 0.0
     yaw: float = 0.0
     roll: float = 0.0
+    eyes_reliable: bool = True
 
 
 @dataclass(frozen=True)
@@ -62,7 +63,7 @@ class Detector:
             return Risk(0, 'baja', (), ())
         values = {'eye': metrics.ear, 'yawn': metrics.mar,
                   'head': max(abs(metrics.pitch), abs(metrics.yaw), abs(metrics.roll))}
-        conditions = {'eye': metrics.ear < c.ear_threshold, 'yawn': metrics.mar > c.mar_threshold,
+        conditions = {'eye': metrics.eyes_reliable and metrics.ear < c.ear_threshold, 'yawn': metrics.mar > c.mar_threshold,
                       'head': abs(metrics.pitch) > c.pitch_degrees or abs(metrics.yaw) > c.yaw_degrees
                       or abs(metrics.roll) > c.roll_degrees}
         active = tuple(Signal(name, gate.update(conditions[name], now), values[name])
